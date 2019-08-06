@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Header, Table, Button, Modal, Form, Message } from 'semantic-ui-react';
+import { Header, Table, Button, Modal, Form, Message, Pagination } from 'semantic-ui-react';
 import Search from '../components/Search';
 import axios from 'axios';
 
@@ -9,7 +9,7 @@ class Member extends Component {
     super(props);
     this.state = {
       userList: [],
-      pageNo: 1,
+      activePage: 1,
       first_result: 0,
       max_results: 20,
       total: '',
@@ -38,9 +38,9 @@ class Member extends Component {
 
   componentDidMount(){
     //讀取資料
-    let { pageNo, first_result, max_results } = this.state;
+    let { activePage, first_result, max_results } = this.state;
 
-    this.refresh(pageNo, first_result, max_results);
+    this.refresh(activePage, first_result, max_results);
   }
 
   //刷新資料 =============================================================
@@ -65,7 +65,7 @@ class Member extends Component {
       console.log(
         'firstPost:' + firstPost +
         '  lastPost:' + lastPost +
-        '  pageNo:' + this.state.pageNo
+        '  activePage:' + this.state.activePage
       );
     });
   }
@@ -110,8 +110,8 @@ class Member extends Component {
 
     axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
 
-      let { pageNo, first_result, max_results } = this.state;
-      this.refresh(pageNo, first_result, max_results);
+      let { activePage, first_result, max_results } = this.state;
+      this.refresh(activePage, first_result, max_results);
 
       if(username == '')
         this.setState({
@@ -135,8 +135,8 @@ class Member extends Component {
   deleteMember(id){
     if(confirm('請確認是否刪除'))
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        let { pageNo, first_result, max_results } = this.state;
-        this.refresh(pageNo, first_result, max_results);
+        let { activePage, first_result, max_results } = this.state;
+        this.refresh(activePage, first_result, max_results);
       });
     else
       return false;
@@ -164,40 +164,19 @@ class Member extends Component {
     });
   }
 
+  //分頁刷頁 =============================================================
+  handlePaginationChange(e, {activePage} ){
+    this.setState({ activePage });
+
+    let { first_result, max_results } = this.state;
+    this.refresh(activePage, first_result, max_results);
+  }
+
   render(){
 
     //頁面顯示筆數 =============================================================
-    let { userList, pageNo, first_result , max_results , total  } = this.state;
+    let { userList, first_result , max_results , total, activePage } = this.state;
     const currentPost = userList.slice(first_result, max_results);
-
-    //頁碼 =============================================================
-    const pageNumbers = [];
-
-    for (let i = 1; i <= Math.ceil(total / (max_results - first_result)); i++) {
-      pageNumbers.push(i);
-    }
-
-    const PageNumbers = pageNumbers.map(number => {
-
-      return (
-        <a
-          key={number}
-          id={number}
-          className={pageNo === number ? 'item active' : 'item'}
-          onClick={() => {
-
-              this.setState({ pageNo: number });
-
-              let { first_result, max_results } = this.state;
-
-              this.refresh(number, first_result, max_results);
-
-            }}
-        >
-          {number}
-        </a>
-      );
-    });
 
     //搜尋 =============================================================
     let searchPost = userList.filter((item)=>{
@@ -258,7 +237,12 @@ class Member extends Component {
         </Table>
         <div className="ui.clearing.segment">
           <div style={{float: 'right'}} className="ui pagination menu ">
-            {PageNumbers}
+            <Pagination
+              activePage={activePage}
+              onPageChange={ this.handlePaginationChange.bind(this) }
+              totalPages={Math.ceil(total / (max_results - first_result))}
+            />
+
           </div>
         </div>
 
