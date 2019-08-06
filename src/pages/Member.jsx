@@ -38,52 +38,62 @@ class Member extends Component {
 
   componentDidMount(){
     //讀取資料
-    this.refresh();
+    let { pageNo, first_result, max_results } = this.state;
+
+    this.refresh(pageNo, first_result, max_results);
   }
 
   //刷新資料 =============================================================
-  refresh(){
-    axios.get('http://192.168.56.101:9988/api/users').then((response) => {
+  refresh(number, first, last){
+
+    let postsPerPage = last - first;
+    let lastPost = postsPerPage * number;
+    let firstPost = lastPost - postsPerPage;
+    let params  = new URLSearchParams();
+
+    params.set('first_result', firstPost);
+    params.set('max_results', lastPost);
+
+    axios.get('http://192.168.56.101:9988/api/users?' + params).then((res) => {
 
       this.setState({
-        userList: response.data.ret,
-        search: '',
-        total: response.data.pagination.total
+        userList: res.data.ret,
+        total: res.data.pagination.total,
+        search: ''
       })
 
       console.log(
-        'first_result:' + this.state.first_result +
-        '  max_results:' + this.state.max_results +
+        'firstPost:' + firstPost +
+        '  lastPost:' + lastPost +
         '  pageNo:' + this.state.pageNo
       );
-
-      //console.log(response.data.pagination.total);
     });
   }
 
+
   //新增資料 =============================================================
   addMember(){
-    axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((response) => {
+    axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
 
       let { userList } = this.state;
-      userList.push(response.data.ret);
 
-      if(this.state.newMemberData.username == '')
+      userList.push(res.data.ret);
+
+      if(this.state.newMemberData.username === '')
         this.setState({
           addError: true
         });
       else
         this.setState({
           userList: userList,
-          addMemberModal: false,
+          total: this.state.total + 1,
           newMemberData:{
             username: '',
             enable: '0',
             locked: '0',
           },
+          addMemberModal: false
         });
-
-      //console.log(response.data.ret);
     });
   }
 
@@ -93,17 +103,17 @@ class Member extends Component {
       editMemberData: { id, username, enable, locked },
       editMemberModal: !this.state.editMemberModal,
     });
-
-    //console.log(this.state.editMemberData);
   }
 
   updateMember(){
-    let { username, enable, locked } = this.state.editMemberData;
+    let { id, username, enable, locked } = this.state.editMemberData;
 
-    axios.put('http://192.168.56.101:9988/api/user/' + this.state.editMemberData.id, { username, enable, locked }).then(() => {
-      this.refresh();
+    axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
 
-      if(this.state.editMemberData.username == '')
+      let { pageNo, first_result, max_results } = this.state;
+      this.refresh(pageNo, first_result, max_results);
+
+      if(username == '')
         this.setState({
           editError: true
         });
@@ -125,7 +135,8 @@ class Member extends Component {
   deleteMember(id){
     if(confirm('請確認是否刪除'))
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        this.refresh();
+        let { pageNo, first_result, max_results } = this.state;
+        this.refresh(pageNo, first_result, max_results);
       });
     else
       return false;
@@ -156,17 +167,13 @@ class Member extends Component {
   render(){
 
     //頁面顯示筆數 =============================================================
-    let { pageNo, first_result , max_results , total  } = this.state;
-
-    const postsPerPage = max_results - first_result;
-    const lastPost = postsPerPage * pageNo;
-    const firstPost = lastPost - postsPerPage;
-    const currentPost = this.state.userList.slice(firstPost, lastPost);
+    let { userList, pageNo, first_result , max_results , total  } = this.state;
+    const currentPost = userList.slice(first_result, max_results);
 
     //頁碼 =============================================================
     const pageNumbers = [];
 
-    for (let i = 1; i <= Math.ceil(total / postsPerPage); i++) {
+    for (let i = 1; i <= Math.ceil(total / (max_results - first_result)); i++) {
       pageNumbers.push(i);
     }
 
@@ -179,30 +186,13 @@ class Member extends Component {
           className={pageNo === number ? 'item active' : 'item'}
           onClick={() => {
 
-            let params  = new URLSearchParams();
-            params.set('first_result', firstPost);
-            params.set('max_results', lastPost);
+              this.setState({ pageNo: number });
 
-            axios.get('http://192.168.56.101:9988/api/users?' + params).then((response) => {
+              let { first_result, max_results } = this.state;
 
-              this.setState({
-                userList: response.data.ret,
-                pageNo: number,
-                first_result: firstPost,
-                max_results: lastPost,
-                total: response.data.pagination.total,
-              });
+              this.refresh(number, first_result, max_results);
 
-              console.log(
-                'first_result:' + this.state.first_result +
-                '  max_results:' + this.state.max_results +
-                '  pageNo:' + this.state.pageNo
-              );
-
-
-            });
-
-          }}
+            }}
         >
           {number}
         </a>
@@ -210,7 +200,7 @@ class Member extends Component {
     });
 
     //搜尋 =============================================================
-    let searchPost = this.state.userList.filter((item)=>{
+    let searchPost = userList.filter((item)=>{
       return item.username.toString().toLowerCase().indexOf(this.state.search.toLowerCase()) !== -1;
     })
 
@@ -221,10 +211,8 @@ class Member extends Component {
     else
       showPost = searchPost;
 
-    //console.log(currentPost);
-
     //顯示列表 =============================================================
-    let userList = showPost.map((userData) => {
+    let showUserList = showPost.map((userData) => {
       return(
         <Table.Row key={userData.id}>
           <Table.Cell>{userData.id}</Table.Cell>
@@ -266,7 +254,7 @@ class Member extends Component {
               <Table.HeaderCell>設定</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
-          <Table.Body>{userList}</Table.Body>
+          <Table.Body>{showUserList}</Table.Body>
         </Table>
         <div className="ui.clearing.segment">
           <div style={{float: 'right'}} className="ui pagination menu ">
