@@ -61,12 +61,6 @@ class Member extends Component {
         total: res.data.pagination.total,
         search: ''
       })
-
-      console.log(
-        'firstPost:' + firstPost +
-        '  lastPost:' + lastPost +
-        '  activePage:' + this.state.activePage
-      );
     });
   }
 
@@ -142,12 +136,40 @@ class Member extends Component {
       return false;
   }
 
+  //分頁刷頁 =============================================================
+  handlePaginationChange(e, {activePage} ){
+    this.setState({ activePage });
+
+    let { first_result, max_results } = this.state;
+
+    this.refresh(activePage, first_result, max_results);
+  }
+
   //搜尋資料 =============================================================
   updateSearch(){
     this.setState({
       data: this.state.data,
       search: event.target.value
     })
+  }
+
+  searchShow(){
+
+    this.refresh(0, 0, this.state.total);
+    let params  = new URLSearchParams();
+
+    params.set('first_result', 0);
+    params.set('max_results', this.state.total);
+
+    axios.get('http://192.168.56.101:9988/api/users?' + params).then((res) => {
+
+
+      this.setState({
+        userList: res.data.ret,
+      })
+
+    });
+
   }
 
   //彈跳視窗 - 新增資料  =============================================================
@@ -162,14 +184,6 @@ class Member extends Component {
     this.setState({
       editMemberModal: !this.state.editMemberModal,
     });
-  }
-
-  //分頁刷頁 =============================================================
-  handlePaginationChange(e, {activePage} ){
-    this.setState({ activePage });
-
-    let { first_result, max_results } = this.state;
-    this.refresh(activePage, first_result, max_results);
   }
 
   render(){
@@ -215,9 +229,9 @@ class Member extends Component {
             value={this.state.search}
             onChange={(e) => {
               this.setState({
-                userList: this.state.userList,
                 search: e.target.value
               });
+              this.searchShow.bind(this);
             }}
           />
           <Button color="blue" onClick={this.newToggleModal}>新增會員</Button>
@@ -242,7 +256,6 @@ class Member extends Component {
               onPageChange={ this.handlePaginationChange.bind(this) }
               totalPages={Math.ceil(total / (max_results - first_result))}
             />
-
           </div>
         </div>
 
