@@ -10,8 +10,8 @@ class Member extends Component {
     this.state = {
       userList: [],
       activePage: 1,
-      first_result: 0,
-      max_results: 20,
+      firstResult: 0,
+      maxResults: 20,
       total: '',
       newMemberData: {
         username: '',
@@ -28,45 +28,45 @@ class Member extends Component {
       editMemberModal: false,
       addError: false,
       editError: false,
-      search: '',
+      search: ''
     };
 
     this.newToggleModal = this.newToggleModal.bind(this);
     this.editToggleModal = this.editToggleModal.bind(this);
+    this.handlePaginationChange = this.handlePaginationChange.bind(this);
+    this.addMember = this.addMember.bind(this)
+    this.updateMember = this.updateMember.bind(this)
 
   }
 
-  componentDidMount(){
+  componentDidMount() {
     //讀取資料
-    let { activePage, first_result, max_results } = this.state;
-
-    this.refresh(activePage, first_result, max_results);
+    let { activePage } = this.state;
+    this.refresh(activePage);
   }
 
   //刷新資料 =============================================================
-  refresh(number, first, last){
+  refresh(number) {
 
-    let postsPerPage = last - first;
+    let postsPerPage = this.state.maxResults - this.state.firstResult;
     let lastPost = postsPerPage * number;
     let firstPost = lastPost - postsPerPage;
-    let params  = new URLSearchParams();
+    let pageNoUrl  = new URLSearchParams();
 
-    params.set('first_result', firstPost);
-    params.set('max_results', lastPost);
+    pageNoUrl.set('first_result', firstPost);
+    pageNoUrl.set('max_results', lastPost);
 
-    axios.get('http://192.168.56.101:9988/api/users?' + params).then((res) => {
+    axios.get('http://192.168.56.101:9988/api/users?' + pageNoUrl).then((res) => {
 
       this.setState({
         userList: res.data.ret,
         total: res.data.pagination.total,
-        search: ''
       })
     });
   }
 
-
   //新增資料 =============================================================
-  addMember(){
+  addMember() {
     axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
 
       let { userList } = this.state;
@@ -74,9 +74,7 @@ class Member extends Component {
       userList.push(res.data.ret);
 
       if(this.state.newMemberData.username === '')
-        this.setState({
-          addError: true
-        });
+        this.setState({ addError: true });
       else
         this.setState({
           userList: userList,
@@ -84,7 +82,7 @@ class Member extends Component {
           newMemberData:{
             username: '',
             enable: '0',
-            locked: '0',
+            locked: '0'
           },
           addMemberModal: false
         });
@@ -92,35 +90,33 @@ class Member extends Component {
   }
 
   //編輯資料 =============================================================
-  editMember(id, username, enable, locked){
+  editMember(id, username, enable, locked) {
     this.setState({
       editMemberData: { id, username, enable, locked },
-      editMemberModal: !this.state.editMemberModal,
+      editMemberModal: !this.state.editMemberModal
     });
   }
 
-  updateMember(){
+  updateMember() {
     let { id, username, enable, locked } = this.state.editMemberData;
 
     axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
 
-      let { activePage, first_result, max_results } = this.state;
-      this.refresh(activePage, first_result, max_results);
+      let { activePage } = this.state;
+      this.refresh(activePage);
 
       if(username == '')
-        this.setState({
-          editError: true
-        });
+        this.setState({ editError: true });
       else
         this.setState({
           editMemberData: {
             id: '',
             username: '',
             enable: '',
-            locked: '',
+            locked: ''
           },
           editMemberModal: false,
-          editError: false,
+          editError: false
         });
     });
   }
@@ -129,80 +125,44 @@ class Member extends Component {
   deleteMember(id){
     if(confirm('請確認是否刪除'))
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        let { activePage, first_result, max_results } = this.state;
-        this.refresh(activePage, first_result, max_results);
+        let { activePage } = this.state;
+        this.refresh(activePage);
       });
     else
       return false;
   }
 
   //分頁刷頁 =============================================================
-  handlePaginationChange(e, {activePage} ){
+  handlePaginationChange(e, {activePage} ) {
     this.setState({ activePage });
 
-    let { first_result, max_results } = this.state;
-
-    this.refresh(activePage, first_result, max_results);
-  }
-
-  //搜尋資料 =============================================================
-  updateSearch(){
-    this.setState({
-      data: this.state.data,
-      search: event.target.value
-    })
-  }
-
-  searchShow(){
-
-    this.refresh(0, 0, this.state.total);
-    let params  = new URLSearchParams();
-
-    params.set('first_result', 0);
-    params.set('max_results', this.state.total);
-
-    axios.get('http://192.168.56.101:9988/api/users?' + params).then((res) => {
-
-
-      this.setState({
-        userList: res.data.ret,
-      })
-
-    });
-
+    this.refresh(activePage);
   }
 
   //彈跳視窗 - 新增資料  =============================================================
-  newToggleModal(){
-    this.setState({
-      addMemberModal: !this.state.addMemberModal,
-    });
+  newToggleModal() {
+    this.setState({ addMemberModal: !this.state.addMemberModal });
   }
 
   //彈跳視窗 - 編輯資料
-  editToggleModal(){
-    this.setState({
-      editMemberModal: !this.state.editMemberModal,
-    });
+  editToggleModal() {
+    this.setState({ editMemberModal: !this.state.editMemberModal });
   }
 
-  render(){
+  render() {
 
-    //頁面顯示筆數 =============================================================
-    let { userList, first_result , max_results , total, activePage } = this.state;
-    const currentPost = userList.slice(first_result, max_results);
-
-    //搜尋 =============================================================
-    let searchPost = userList.filter((item)=>{
-      return item.username.toString().toLowerCase().indexOf(this.state.search.toLowerCase()) !== -1;
-    })
-
+    let { userList, activePage, firstResult , maxResults, total } = this.state;
     let showPost;
 
+    //頁面顯示筆數 =============================================================
     if(this.state.search === '')
-      showPost = currentPost;
+      //顯示分頁筆數
+      showPost = userList.slice(firstResult, maxResults);
     else
-      showPost = searchPost;
+      //搜尋結果
+      showPost = userList.slice(firstResult, total).filter((item)=>{
+        return item.username.toString().toLowerCase().indexOf(this.state.search.toLowerCase()) !== -1;
+      });
 
     //顯示列表 =============================================================
     let showUserList = showPost.map((userData) => {
@@ -228,10 +188,25 @@ class Member extends Component {
           <Search
             value={this.state.search}
             onChange={(e) => {
-              this.setState({
-                search: e.target.value
-              });
-              this.searchShow.bind(this);
+              if(e.target.value === '') {
+                this.setState({ search: '' });
+              }else{
+                this.setState({ search: e.target.value });
+
+                let searchUrl  = new URLSearchParams();
+                let { firstResult, total } = this.state;
+
+                searchUrl.set('first_result', firstResult);
+                searchUrl.set('max_results', total);
+
+                axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
+                  this.setState({ userList: res.data.ret })
+
+                  //console.log(this.state.userList);
+                });
+              }
+
+              //console.log('max :' + this.state.maxResults + '  total: ' + this.state.total + '  first: ' + this.state.firstResult);
             }}
           />
           <Button color="blue" onClick={this.newToggleModal}>新增會員</Button>
@@ -250,12 +225,14 @@ class Member extends Component {
           <Table.Body>{showUserList}</Table.Body>
         </Table>
         <div className="ui.clearing.segment">
-          <div style={{float: 'right'}} className="ui pagination menu ">
-            <Pagination
-              activePage={activePage}
-              onPageChange={ this.handlePaginationChange.bind(this) }
-              totalPages={Math.ceil(total / (max_results - first_result))}
-            />
+          <div style={{float: 'right'}} className="ui pagination menu">
+            {this.state.search === '' &&
+              <Pagination
+                activePage={activePage}
+                onPageChange={this.handlePaginationChange}
+                totalPages={Math.ceil(total / (maxResults - firstResult))}
+              />
+            }
           </div>
         </div>
 
@@ -273,8 +250,10 @@ class Member extends Component {
                   value={this.state.newMemberData.username}
                   onChange={(e) => {
                     let{newMemberData} = this.state;
+
                     newMemberData.username = e.target.value;
-                    this.setState({newMemberData});
+
+                    this.setState({ newMemberData });
                   }}
                 />
               </Form.Group>
@@ -286,8 +265,10 @@ class Member extends Component {
                   value={this.state.newMemberData.enable}
                   onChange={(e) => {
                     let {newMemberData} = this.state;
+
                     newMemberData.enable = e.target.value;
-                    this.setState({newMemberData});
+
+                    this.setState({ newMemberData });
                   }}
                 >
                   <option value="0">否</option>
@@ -300,7 +281,7 @@ class Member extends Component {
                   onChange={(e) => {
                     let {newMemberData} = this.state;
                     newMemberData.locked = e.target.value;
-                    this.setState({newMemberData});
+                    this.setState({ newMemberData });
                   }}
                 >
                   <option value="0">否</option>
@@ -311,7 +292,7 @@ class Member extends Component {
             </Form>
           </Modal.Content>
           <Modal.Actions>
-            <Button color="green" onClick={this.addMember.bind(this)}>確定</Button>
+            <Button color="green" onClick={this.addMember}>確定</Button>
             <Button onClick={this.newToggleModal}>取消</Button>
           </Modal.Actions>
         </Modal>
@@ -330,8 +311,10 @@ class Member extends Component {
                   value={this.state.editMemberData.username}
                   onChange={(e) => {
                     let{editMemberData} = this.state;
+
                     editMemberData.username = e.target.value;
-                    this.setState({editMemberData});
+
+                    this.setState({ editMemberData });
                   }}
                 />
               </Form.Group>
@@ -343,8 +326,10 @@ class Member extends Component {
                   value={this.state.editMemberData.enable}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
+
                     editMemberData.enable = e.target.value;
-                    this.setState({editMemberData});
+
+                    this.setState({ editMemberData });
                   }}
                 >
                   <option value="0">否</option>
@@ -356,8 +341,10 @@ class Member extends Component {
                   value={this.state.editMemberData.locked}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
+
                     editMemberData.locked = e.target.value;
-                    this.setState({editMemberData});
+
+                    this.setState({ editMemberData });
                   }}
                 >
                   <option value="0">否</option>
@@ -368,7 +355,7 @@ class Member extends Component {
             </Form>
           </Modal.Content>
           <Modal.Actions>
-            <Button color="green" onClick={this.updateMember.bind(this)}>更新</Button>
+            <Button color="green" onClick={this.updateMember}>更新</Button>
             <Button onClick={this.editToggleModal}>取消</Button>
           </Modal.Actions>
         </Modal>
