@@ -36,7 +36,6 @@ class Member extends Component {
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
     this.addMember = this.addMember.bind(this)
     this.updateMember = this.updateMember.bind(this)
-
   }
 
   componentDidMount() {
@@ -67,15 +66,18 @@ class Member extends Component {
 
   //新增資料 =============================================================
   addMember() {
-    axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
 
-      let { userList } = this.state;
+    let { userList } = this.state;
 
-      userList.push(res.data.ret);
+    if(this.state.newMemberData.username === ''){
+      this.setState({
+        addError: true,
+        addMemberModal: true
+      });
+    }else{
+      axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
+        userList.push(res.data.ret);
 
-      if(this.state.newMemberData.username === '')
-        this.setState({ addError: true });
-      else
         this.setState({
           userList: userList,
           total: this.state.total + 1,
@@ -86,7 +88,8 @@ class Member extends Component {
           },
           addMemberModal: false
         });
-    });
+      });
+    }
   }
 
   //編輯資料 =============================================================
@@ -100,15 +103,14 @@ class Member extends Component {
   updateMember() {
     let { id, username, enable, locked } = this.state.editMemberData;
 
-    axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
+    if(username === ''){
+      this.setState({ editError: true });
+    }else{
+      axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
+        this.refresh(this.state.activePage);
 
-      let { activePage } = this.state;
-      this.refresh(activePage);
-
-      if(username == '')
-        this.setState({ editError: true });
-      else
         this.setState({
+          activePage: this.state.activePage,
           editMemberData: {
             id: '',
             username: '',
@@ -118,7 +120,8 @@ class Member extends Component {
           editMemberModal: false,
           editError: false
         });
-    });
+      });
+    }
   }
 
   //刪除資料 =============================================================
@@ -126,6 +129,11 @@ class Member extends Component {
     if(confirm('請確認是否刪除'))
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
         let { activePage } = this.state;
+
+        this.setState({
+          search: ''
+        })
+
         this.refresh(activePage);
       });
     else
