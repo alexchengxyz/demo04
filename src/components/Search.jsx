@@ -1,8 +1,8 @@
 import React from 'react';
 
 function Search(props){
-  
-    //css樣式
+
+    // css樣式
     const marginRight = {
       marginRight: '20px'
     };
