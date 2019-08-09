@@ -27,15 +27,16 @@ class Member extends Component {
       editMemberModal: false,
       addError: false,
       editError: false,
-      search: ''
+      search: '',
+      searchTotal: ''
     };
 
     this.newToggleModal = this.newToggleModal.bind(this);
     this.editToggleModal = this.editToggleModal.bind(this);
-    this.handlePaginationChange = this.handlePaginationChange.bind(this);
     this.addMember = this.addMember.bind(this)
     this.updateMember = this.updateMember.bind(this)
-    this.search = this.search.bind(this)
+    this.handlePaginationChange = this.handlePaginationChange.bind(this);
+    this.searchChange = this.searchChange.bind(this);
   }
 
   componentDidMount() {
@@ -43,10 +44,6 @@ class Member extends Component {
     let { activePage } = this.state;
 
     this.refresh(activePage);
-  }
-
-  componentDidUpdate(){
-
   }
 
   // 刷新資料
@@ -63,14 +60,13 @@ class Member extends Component {
       this.setState({
         userList: res.data.ret,
         total: res.data.pagination.total,
+        search: ''
       })
     });
-    console.log('firstPost :' + firstPost + '   lastPost :' + lastPost);
   }
 
   // 新增資料
   addMember() {
-
     let { userList } = this.state;
 
     if (this.state.newMemberData.username === '') {
@@ -132,7 +128,7 @@ class Member extends Component {
   deleteMember(id) {
     if (confirm('請確認是否刪除')) {
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        let { activePage, total, maxResults, firstResult } = this.state;
+        let { activePage, total, maxResults, firstResult, search } = this.state;
         let changeNumber = Math.ceil((total - 1) / (maxResults - firstResult));
         let number;
 
@@ -142,10 +138,11 @@ class Member extends Component {
           number = activePage;
         }
 
-        this.setState({ search: '' })
-
-        this.refresh(number);
-        console.log('total :' + total + '   maxResults :' + maxResults + '   firstResult :' + firstResult);
+        if(search === '') {
+          this.refresh(number);
+        } else {
+          this.search(this.state.search);
+        }
       });
     } else {
       return false;
@@ -153,48 +150,88 @@ class Member extends Component {
   }
 
   // 搜尋
-  search() {
+  search(searchText) {
     let searchUrl  = new URLSearchParams();
-    let { firstResult, total } = this.state;
+    let { activePage, firstResult, total } = this.state;
 
     searchUrl.set('first_result', firstResult);
     searchUrl.set('max_results', total);
+    searchUrl.set('username', searchText);
 
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
-      this.setState({ userList: res.data.ret })
+      this.setState({
+        userList: res.data.ret,
+        activePage: activePage,
+        search: searchText,
+        searchTotal: res.data.ret.length
+      });
     });
+  }
+
+  searchChange(e){
+    if (e.target.value !== '') {
+      let value = e.target.value;
+
+      this.setState({
+        search: value,
+        activePage: 1
+      });
+
+      this.search(value);
+    } else {
+      this.refresh(this.state.activePage);
+    }
   }
 
   // 分頁刷頁
   handlePaginationChange(e, {activePage}) {
     this.setState({ activePage });
 
-    this.refresh(activePage);
+    if (this.state.search === ''){
+      this.refresh(activePage);
+    } else {
+      this.search(this.state.search);
+    }
   }
 
   // 彈跳視窗 - 新增資料
   newToggleModal() {
-    this.setState({ addMemberModal: !this.state.addMemberModal });
+    this.setState({
+      addMemberModal: !this.state.addMemberModal,
+      addError: false
+    });
   }
 
   // 彈跳視窗 - 編輯資料
   editToggleModal() {
-    this.setState({ editMemberModal: !this.state.editMemberModal });
+    this.setState({
+      editMemberModal: !this.state.editMemberModal,
+      editError: false
+    });
   }
 
   render() {
-    let { userList, activePage, firstResult , maxResults, total } = this.state;
+    let { userList, activePage, firstResult , maxResults, total, searchTotal } = this.state;
     let showPost;
+    let paginationTotal;
 
     // 頁面顯示筆數
     if (this.state.search === '') {
-      // 顯示分頁筆數
+      // 顯示一般列表
       showPost = userList.slice(firstResult, maxResults);
+
+      paginationTotal = Math.ceil(total / (maxResults - firstResult));
     } else {
-      // 搜尋結果
-      showPost = userList.slice(firstResult, total).filter((item)=>{
-        return item.username.toString().toLowerCase().indexOf(this.state.search.toLowerCase()) !== -1;
-      });
+      // 顯示搜尋列表
+      let postsPerPage = maxResults - firstResult;
+      let lastPost = postsPerPage * activePage;
+      let firstPost = lastPost - postsPerPage;
+
+      showPost = userList.slice(firstPost, lastPost);
+
+      paginationTotal = Math.ceil(searchTotal / (maxResults - firstResult));
+
+      console.log(this.state.activePage);
     }
 
     // 顯示列表
@@ -214,7 +251,6 @@ class Member extends Component {
       )
     });
 
-    console.log('  activePage : ' + this.state.activePage + '   total :' + this.state.total);
     return(
       <div>
         <Header as="h1" className="dividing artivle-title">會員管理</Header>
@@ -222,16 +258,8 @@ class Member extends Component {
         <div style={{textAlign: 'right'}}>
           <Search
             value={this.state.search}
-            onChange={(e) => {
-              if (e.target.value === '') {
-                this.setState({ search: '' });
-              } else {
-                this.setState({ search: e.target.value });
-                this.search.bind(this);
-              }
-            }}
+            onChange={this.searchChange}
           />
-
           <Button color="blue" onClick={this.newToggleModal}>新增會員</Button>
         </div>
 
@@ -254,7 +282,7 @@ class Member extends Component {
             <Pagination
               activePage={activePage}
               onPageChange={this.handlePaginationChange}
-              totalPages={Math.ceil(total / (maxResults - firstResult))}
+              totalPages={paginationTotal}
             />
           </div>
         </div>
@@ -272,9 +300,7 @@ class Member extends Component {
                   value={this.state.newMemberData.username}
                   onChange={(e) => {
                     let{newMemberData} = this.state;
-
                     newMemberData.username = e.target.value;
-
                     this.setState({ newMemberData });
                   }}
                 />
@@ -287,9 +313,7 @@ class Member extends Component {
                   value={this.state.newMemberData.enable}
                   onChange={(e) => {
                     let {newMemberData} = this.state;
-
                     newMemberData.enable = e.target.value;
-
                     this.setState({ newMemberData });
                   }}
                 >
@@ -331,9 +355,7 @@ class Member extends Component {
                   value={this.state.editMemberData.username}
                   onChange={(e) => {
                     let{editMemberData} = this.state;
-
                     editMemberData.username = e.target.value;
-
                     this.setState({ editMemberData });
                   }}
                 />
@@ -346,9 +368,7 @@ class Member extends Component {
                   value={this.state.editMemberData.enable}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
-
                     editMemberData.enable = e.target.value;
-
                     this.setState({ editMemberData });
                   }}
                 >
@@ -361,9 +381,7 @@ class Member extends Component {
                   value={this.state.editMemberData.locked}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
-
                     editMemberData.locked = e.target.value;
-
                     this.setState({ editMemberData });
                   }}
                 >
