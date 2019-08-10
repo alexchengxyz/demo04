@@ -12,6 +12,9 @@ class Member extends Component {
       firstResult: 0,
       maxResults: 20,
       total: '',
+      search: '',
+      searchTotal: '',
+      paginationTotal: '',
       newMemberData: {
         username: '',
         enable: '0',
@@ -27,8 +30,6 @@ class Member extends Component {
       editMemberModal: false,
       addError: false,
       editError: false,
-      search: '',
-      searchTotal: ''
     };
 
     this.newToggleModal = this.newToggleModal.bind(this);
@@ -41,14 +42,13 @@ class Member extends Component {
 
   componentDidMount() {
     // 讀取資料
-    let { activePage } = this.state;
-
-    this.refresh(activePage);
+    this.refresh(this.state.activePage);
   }
 
   // 刷新資料
   refresh(number) {
-    let postsPerPage = this.state.maxResults - this.state.firstResult;
+    let { firstResult, maxResults } = this.state;
+    let postsPerPage = maxResults - firstResult;
     let lastPost = postsPerPage * number;
     let firstPost = lastPost - postsPerPage;
     let pageNoUrl  = new URLSearchParams();
@@ -56,11 +56,16 @@ class Member extends Component {
     pageNoUrl.set('first_result', firstPost);
     pageNoUrl.set('max_results', lastPost);
 
-    axios.get('http://192.168.56.101:9988/api/users?' + pageNoUrl).then((res) => {
+    axios.get('http://localhost:9988/api/users?' + pageNoUrl).then((res) => {
+      let showPost = res.data.ret.slice(firstResult, maxResults);
+      let itemTotal = res.data.pagination.total;
+      let paginationTotal = Math.ceil(itemTotal / (maxResults - firstResult));
+
       this.setState({
-        userList: res.data.ret,
-        total: res.data.pagination.total,
-        search: ''
+        userList: showPost,
+        total: itemTotal,
+        search: '',
+        paginationTotal: paginationTotal
       })
     });
   }
@@ -75,13 +80,14 @@ class Member extends Component {
         addMemberModal: true
       });
     } else {
-      axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
+      axios.post('http://localhost:9988/api/user', this.state.newMemberData).then((res) => {
         userList.push(res.data.ret);
 
         this.setState({
           userList: userList,
           total: this.state.total + 1,
-          newMemberData:{
+          paginationTotal: this.state.paginationTotal,
+          newMemberData: {
             username: '',
             enable: '0',
             locked: '0'
@@ -106,7 +112,7 @@ class Member extends Component {
     if (username === '') {
       this.setState({ editError: true });
     } else {
-      axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
+      axios.put('http://localhost:9988/api/user/' + id, { username, enable, locked }).then(() => {
         this.refresh(this.state.activePage);
 
         this.setState({
@@ -127,21 +133,30 @@ class Member extends Component {
   // 刪除資料
   deleteMember(id) {
     if (confirm('請確認是否刪除')) {
-      axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        let { activePage, total, maxResults, firstResult, search } = this.state;
-        let changeNumber = Math.ceil((total - 1) / (maxResults - firstResult));
-        let number;
-
-        if (activePage > changeNumber) {
-          number = changeNumber;
-        } else {
-          number = activePage;
-        }
+      axios.delete('http://localhost:9988/api/user/' + id).then(() => {
+        let { activePage, total, maxResults, firstResult, search, searchTotal } = this.state;
 
         if(search === '') {
+          let changeNumber = Math.ceil((total - 1) / (maxResults - firstResult));
+          let number;
+  
+          if (activePage > changeNumber) {
+            number = changeNumber;
+          } else {
+            number = activePage;
+          }
+  
           this.refresh(number);
         } else {
-          this.search(this.state.search);
+          let changeNumber = Math.ceil((searchTotal - 1) / (maxResults - firstResult));
+          let number;
+  
+          if (activePage > changeNumber) {
+            number = changeNumber;
+          } else {
+            number = activePage;
+          }
+          this.search(search, number);
         }
       });
     } else {
@@ -150,36 +165,44 @@ class Member extends Component {
   }
 
   // 搜尋
-  search(searchText) {
+  search(searchText, number) {
+    let { firstResult, maxResults, total } = this.state;
+    let postsPerPage = maxResults - firstResult;
+    let lastPost = postsPerPage * number;
+    let firstPost = lastPost - postsPerPage;
     let searchUrl  = new URLSearchParams();
-    let { activePage, firstResult, total } = this.state;
-
+    
     searchUrl.set('first_result', firstResult);
     searchUrl.set('max_results', total);
     searchUrl.set('username', searchText);
 
-    axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
+    axios.get('http://localhost:9988/api/users?' + searchUrl).then((res) => {
+      let paginationTotal = Math.ceil(res.data.ret.length / (maxResults - firstResult));
+      let showPost = res.data.ret.slice(firstPost, lastPost);
+
       this.setState({
-        userList: res.data.ret,
-        activePage: activePage,
+        userList: showPost,
         search: searchText,
-        searchTotal: res.data.ret.length
+        searchTotal: res.data.ret.length,
+        paginationTotal: paginationTotal
       });
     });
+    
   }
 
   searchChange(e){
+    this.setState({ activePage: 1 })
+
     if (e.target.value !== '') {
       let value = e.target.value;
 
-      this.setState({
-        search: value,
-        activePage: 1
-      });
+      this.setState({ search: value });
 
-      this.search(value);
+      this.search(value, 1);
     } else {
       this.refresh(this.state.activePage);
+
+      console.log(this.state.activePage);
     }
   }
 
@@ -190,7 +213,7 @@ class Member extends Component {
     if (this.state.search === ''){
       this.refresh(activePage);
     } else {
-      this.search(this.state.search);
+      this.search(this.state.search, activePage);
     }
   }
 
@@ -211,31 +234,10 @@ class Member extends Component {
   }
 
   render() {
-    let { userList, activePage, firstResult , maxResults, total, searchTotal } = this.state;
-    let showPost;
-    let paginationTotal;
-
-    // 頁面顯示筆數
-    if (this.state.search === '') {
-      // 顯示一般列表
-      showPost = userList.slice(firstResult, maxResults);
-
-      paginationTotal = Math.ceil(total / (maxResults - firstResult));
-    } else {
-      // 顯示搜尋列表
-      let postsPerPage = maxResults - firstResult;
-      let lastPost = postsPerPage * activePage;
-      let firstPost = lastPost - postsPerPage;
-
-      showPost = userList.slice(firstPost, lastPost);
-
-      paginationTotal = Math.ceil(searchTotal / (maxResults - firstResult));
-
-      console.log(this.state.activePage);
-    }
+    let { userList, activePage } = this.state;
 
     // 顯示列表
-    let showUserList = showPost.map((userData) => {
+    let showUserList = userList.map((userData) => {
       return(
         <Table.Row key={userData.id}>
           <Table.Cell>{userData.id}</Table.Cell>
@@ -282,7 +284,7 @@ class Member extends Component {
             <Pagination
               activePage={activePage}
               onPageChange={this.handlePaginationChange}
-              totalPages={paginationTotal}
+              totalPages={this.state.paginationTotal}
             />
           </div>
         </div>
