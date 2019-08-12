@@ -18,14 +18,14 @@ class Member extends Component {
       paginationTotal: '',
       newMemberData: {
         username: '',
-        enable: '0',
-        locked: '0',
+        enable: 0,
+        locked: 0,
       },
       editMemberData: {
         id: '',
         username: '',
-        enable: '0',
-        locked: '0',
+        enable: 0,
+        locked: 0,
       },
       addMemberModal: false,
       editMemberModal: false,
@@ -74,26 +74,29 @@ class Member extends Component {
   addMember() {
     let { userList, total, paginationTotal, newMemberData } = this.state;
 
-    if (newMemberData.username === '') {
-      this.setState({
-        addError: true,
-        addMemberModal: true
-      });
-    } else {
+    if (newMemberData.username) {
       axios.post('http://192.168.56.101:9988/api/user', newMemberData).then((res) => {
         userList.push(res.data.ret);
 
         this.setState({
           userList: userList,
+          activePage: 1,
           total: total + 1,
           paginationTotal: paginationTotal,
           newMemberData: {
             username: '',
-            enable: '0',
-            locked: '0'
+            enable: 0,
+            locked: 0
           },
           addMemberModal: false
         });
+
+        this.refresh(1);
+      });
+    } else {
+      this.setState({
+        addError: true,
+        addMemberModal: true
       });
     }
   }
@@ -110,14 +113,12 @@ class Member extends Component {
     let { id, username, enable, locked } = this.state.editMemberData;
     let { activePage, search,  } = this.state;
 
-    if (username === '') {
-      this.setState({ editError: true });
-    } else {
+    if (username) {
       axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
-        if(search === '') {
-          this.refresh(activePage);
-        } else {
+        if (search) {
           this.search(search, activePage);
+        } else {
+          this.refresh(activePage);
         }
 
         this.setState({
@@ -131,8 +132,9 @@ class Member extends Component {
           editMemberModal: false,
           editError: false
         });
-
       });
+    } else {
+      this.setState({ editError: true });
     }
   }
 
@@ -144,10 +146,10 @@ class Member extends Component {
         let number;
         let allItem;
 
-        if(search === '') {
-          allItem = total;
-        } else {
+        if (search) {
           allItem = searchTotal;
+        } else {
+          allItem = total;
         }
 
         let changeNumber = Math.ceil((allItem - 1) / postsPerPage);
@@ -158,10 +160,12 @@ class Member extends Component {
           number = activePage;
         }
 
-        if(search === '') {
-          this.refresh(number);
-        } else {
+        this.setState({ activePage: number });
+
+        if (search) {
           this.search(search, number);
+        } else {
+          this.refresh(number);
         }
       });
     } else {
@@ -199,9 +203,7 @@ class Member extends Component {
 
     if (e.target.value) {
       let value = e.target.value;
-
       this.setState({ search: value });
-
       this.search(value, 1);
     } else {
       this.refresh(this.state.activePage);
@@ -212,10 +214,10 @@ class Member extends Component {
   handlePaginationChange(e, {activePage}) {
     this.setState({ activePage });
 
-    if (this.state.search === ''){
-      this.refresh(activePage);
-    } else {
+    if (this.state.search){
       this.search(this.state.search, activePage);
+    } else {
+      this.refresh(activePage);
     }
   }
 
@@ -241,16 +243,21 @@ class Member extends Component {
     let showPagination;
     let noInfo;
 
+    console.log(userList);
     // 顯示列表
     if (total) {
       showUserList = userList.map((userData) => {
+        let getDate = userData.created_at.slice(0, 10);
+        let getTime = userData.created_at.slice(11, 16);
+        let showTime = getDate + '  ' + getTime;
+
         return(
           <Table.Row key={userData.id}>
             <Table.Cell>{userData.id}</Table.Cell>
             <Table.Cell>{userData.username}</Table.Cell>
             <Table.Cell>{userData.enable}</Table.Cell>
             <Table.Cell>{userData.locked}</Table.Cell>
-            <Table.Cell>{userData.created_at}</Table.Cell>
+            <Table.Cell>{showTime}</Table.Cell>
             <Table.Cell>
               <Button
                 color="teal"
@@ -270,10 +277,7 @@ class Member extends Component {
       });
     }
 
-    if (
-      total < 1
-      || (search && searchTotal < 1)
-    ) {
+    if (total < 1 || (search && searchTotal < 1)) {
       noInfo = (
         <Table.Row>
           <Table.Cell colSpan="7">
@@ -286,7 +290,7 @@ class Member extends Component {
     }
 
     // 顯示頁碼
-    if ( paginationTotal > 1 ) {
+    if (paginationTotal > 1) {
       showPagination = (
         <div className="ui.clearing.segment">
           <div style={{float: 'right'}} className="ui pagination menu">
