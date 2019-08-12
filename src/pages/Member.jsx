@@ -9,9 +9,13 @@ class Member extends Component {
     this.state = {
       userList: [],
       activePage: 1,
-      firstResult: 0,
-      maxResults: 20,
+      firstPostsPerPage: 0,
+      lastPostsPerPage: 20,
+      postsPerPage: 20,
       total: '',
+      search: '',
+      searchTotal: '',
+      paginationTotal: '',
       newMemberData: {
         username: '',
         enable: '0',
@@ -27,8 +31,6 @@ class Member extends Component {
       editMemberModal: false,
       addError: false,
       editError: false,
-      search: '',
-      searchTotal: ''
     };
 
     this.newToggleModal = this.newToggleModal.bind(this);
@@ -41,14 +43,12 @@ class Member extends Component {
 
   componentDidMount() {
     // 讀取資料
-    let { activePage } = this.state;
-
-    this.refresh(activePage);
+    this.refresh(this.state.activePage);
   }
 
   // 刷新資料
   refresh(number) {
-    let postsPerPage = this.state.maxResults - this.state.firstResult;
+    let { firstPostsPerPage, lastPostsPerPage, postsPerPage } = this.state;
     let lastPost = postsPerPage * number;
     let firstPost = lastPost - postsPerPage;
     let pageNoUrl  = new URLSearchParams();
@@ -57,31 +57,37 @@ class Member extends Component {
     pageNoUrl.set('max_results', lastPost);
 
     axios.get('http://192.168.56.101:9988/api/users?' + pageNoUrl).then((res) => {
+      let showPost = res.data.ret.slice(firstPostsPerPage, lastPostsPerPage);
+      let itemTotal = res.data.pagination.total;
+      let paginationTotal = Math.ceil(itemTotal / postsPerPage);
+
       this.setState({
-        userList: res.data.ret,
-        total: res.data.pagination.total,
-        search: ''
+        userList: showPost,
+        total: itemTotal,
+        search: '',
+        paginationTotal: paginationTotal
       })
     });
   }
 
   // 新增資料
   addMember() {
-    let { userList } = this.state;
+    let { userList, total, paginationTotal, newMemberData } = this.state;
 
-    if (this.state.newMemberData.username === '') {
+    if (newMemberData.username === '') {
       this.setState({
         addError: true,
         addMemberModal: true
       });
     } else {
-      axios.post('http://192.168.56.101:9988/api/user', this.state.newMemberData).then((res) => {
+      axios.post('http://192.168.56.101:9988/api/user', newMemberData).then((res) => {
         userList.push(res.data.ret);
 
         this.setState({
           userList: userList,
-          total: this.state.total + 1,
-          newMemberData:{
+          total: total + 1,
+          paginationTotal: paginationTotal,
+          newMemberData: {
             username: '',
             enable: '0',
             locked: '0'
@@ -102,15 +108,20 @@ class Member extends Component {
 
   updateMember() {
     let { id, username, enable, locked } = this.state.editMemberData;
+    let { activePage, search,  } = this.state;
 
     if (username === '') {
       this.setState({ editError: true });
     } else {
       axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
-        this.refresh(this.state.activePage);
+        if(search === '') {
+          this.refresh(activePage);
+        } else {
+          this.search(search, activePage);
+        }
 
         this.setState({
-          activePage: this.state.activePage,
+          activePage: activePage,
           editMemberData: {
             id: '',
             username: '',
@@ -120,6 +131,7 @@ class Member extends Component {
           editMemberModal: false,
           editError: false
         });
+
       });
     }
   }
@@ -128,9 +140,17 @@ class Member extends Component {
   deleteMember(id) {
     if (confirm('請確認是否刪除')) {
       axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
-        let { activePage, total, maxResults, firstResult, search } = this.state;
-        let changeNumber = Math.ceil((total - 1) / (maxResults - firstResult));
+        let { postsPerPage, activePage, total, search, searchTotal } = this.state;
         let number;
+        let allItem;
+
+        if(search === '') {
+          allItem = total;
+        } else {
+          allItem = searchTotal;
+        }
+
+        let changeNumber = Math.ceil((allItem - 1) / postsPerPage);
 
         if (activePage > changeNumber) {
           number = changeNumber;
@@ -141,7 +161,7 @@ class Member extends Component {
         if(search === '') {
           this.refresh(number);
         } else {
-          this.search(this.state.search);
+          this.search(search, number);
         }
       });
     } else {
@@ -150,34 +170,39 @@ class Member extends Component {
   }
 
   // 搜尋
-  search(searchText) {
+  search(searchText, number) {
+    let { firstPostsPerPage, postsPerPage, total } = this.state;
+    let lastPost = postsPerPage * number;
+    let firstPost = lastPost - postsPerPage;
     let searchUrl  = new URLSearchParams();
-    let { activePage, firstResult, total } = this.state;
 
-    searchUrl.set('first_result', firstResult);
+    searchUrl.set('first_result', firstPostsPerPage);
     searchUrl.set('max_results', total);
     searchUrl.set('username', searchText);
 
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
+      let paginationTotal = Math.ceil(res.data.ret.length / postsPerPage);
+      let showPost = res.data.ret.slice(firstPost, lastPost);
+
       this.setState({
-        userList: res.data.ret,
-        activePage: activePage,
+        userList: showPost,
         search: searchText,
-        searchTotal: res.data.ret.length
+        searchTotal: res.data.ret.length,
+        paginationTotal: paginationTotal
       });
     });
+
   }
 
   searchChange(e){
-    if (e.target.value !== '') {
+    this.setState({ activePage: 1 })
+
+    if (e.target.value) {
       let value = e.target.value;
 
-      this.setState({
-        search: value,
-        activePage: 1
-      });
+      this.setState({ search: value });
 
-      this.search(value);
+      this.search(value, 1);
     } else {
       this.refresh(this.state.activePage);
     }
@@ -190,7 +215,7 @@ class Member extends Component {
     if (this.state.search === ''){
       this.refresh(activePage);
     } else {
-      this.search(this.state.search);
+      this.search(this.state.search, activePage);
     }
   }
 
@@ -211,45 +236,69 @@ class Member extends Component {
   }
 
   render() {
-    let { userList, activePage, firstResult , maxResults, total, searchTotal } = this.state;
-    let showPost;
-    let paginationTotal;
-
-    // 頁面顯示筆數
-    if (this.state.search === '') {
-      // 顯示一般列表
-      showPost = userList.slice(firstResult, maxResults);
-
-      paginationTotal = Math.ceil(total / (maxResults - firstResult));
-    } else {
-      // 顯示搜尋列表
-      let postsPerPage = maxResults - firstResult;
-      let lastPost = postsPerPage * activePage;
-      let firstPost = lastPost - postsPerPage;
-
-      showPost = userList.slice(firstPost, lastPost);
-
-      paginationTotal = Math.ceil(searchTotal / (maxResults - firstResult));
-
-      console.log(this.state.activePage);
-    }
+    let { userList, activePage, total, searchTotal,search, paginationTotal } = this.state;
+    let showUserList;
+    let showPagination;
+    let noInfo;
 
     // 顯示列表
-    let showUserList = showPost.map((userData) => {
-      return(
-        <Table.Row key={userData.id}>
-          <Table.Cell>{userData.id}</Table.Cell>
-          <Table.Cell>{userData.username}</Table.Cell>
-          <Table.Cell>{userData.enable}</Table.Cell>
-          <Table.Cell>{userData.locked}</Table.Cell>
-          <Table.Cell>{userData.created_at}</Table.Cell>
-          <Table.Cell>
-            <Button color='teal' onClick={this.editMember.bind(this, userData.id, userData.username, userData.enable, userData.locked)}>編輯</Button>
-            <Button color='red' onClick={this.deleteMember.bind(this, userData.id)}>刪除</Button>
+    if (total) {
+      showUserList = userList.map((userData) => {
+        return(
+          <Table.Row key={userData.id}>
+            <Table.Cell>{userData.id}</Table.Cell>
+            <Table.Cell>{userData.username}</Table.Cell>
+            <Table.Cell>{userData.enable}</Table.Cell>
+            <Table.Cell>{userData.locked}</Table.Cell>
+            <Table.Cell>{userData.created_at}</Table.Cell>
+            <Table.Cell>
+              <Button
+                color="teal"
+                onClick={this.editMember.bind(this, userData.id, userData.username, userData.enable, userData.locked)}
+              >
+                編輯
+              </Button>
+              <Button
+                color="red"
+                onClick={this.deleteMember.bind(this, userData.id)}
+              >
+                刪除
+              </Button>
+            </Table.Cell>
+          </Table.Row>
+        )
+      });
+    }
+
+    if (
+      total < 1
+      || (search && searchTotal < 1)
+    ) {
+      noInfo = (
+        <Table.Row>
+          <Table.Cell colSpan="7">
+            <Message>
+              <Message.Header>找不到符合條件的內容。</Message.Header>
+            </Message>
           </Table.Cell>
         </Table.Row>
-      )
-    });
+      );
+    }
+
+    // 顯示頁碼
+    if ( paginationTotal > 1 ) {
+      showPagination = (
+        <div className="ui.clearing.segment">
+          <div style={{float: 'right'}} className="ui pagination menu">
+            <Pagination
+              activePage={activePage}
+              onPageChange={this.handlePaginationChange}
+              totalPages={paginationTotal}
+            />
+          </div>
+        </div>
+      );
+    }
 
     return(
       <div>
@@ -274,18 +323,13 @@ class Member extends Component {
               <Table.HeaderCell>設定</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
-          <Table.Body>{showUserList}</Table.Body>
+          <Table.Body>
+            {showUserList}
+            {noInfo}
+          </Table.Body>
         </Table>
 
-        <div className="ui.clearing.segment">
-          <div style={{float: 'right'}} className="ui pagination menu">
-            <Pagination
-              activePage={activePage}
-              onPageChange={this.handlePaginationChange}
-              totalPages={paginationTotal}
-            />
-          </div>
-        </div>
+        {showPagination}
 
         {/* 彈跳視窗 - 新增資料 */}
         <Modal open={this.state.addMemberModal} >
