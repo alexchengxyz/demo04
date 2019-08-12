@@ -8,7 +8,7 @@ function Search(props){
     };
 
     return (
-      <div style={marginRight} className="ui icon input">
+      <div style={marginRight} className="ui icon input" >
         <input
           value={props.value}
           onChange={props.onChange}

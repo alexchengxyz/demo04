@@ -18,14 +18,14 @@ class Member extends Component {
       paginationTotal: '',
       newMemberData: {
         username: '',
-        enable: 0,
-        locked: 0,
+        enable: '0',
+        locked: '0',
       },
       editMemberData: {
         id: '',
         username: '',
-        enable: 0,
-        locked: 0,
+        enable: '0',
+        locked: '0',
       },
       addMemberModal: false,
       editMemberModal: false,
@@ -85,8 +85,8 @@ class Member extends Component {
           paginationTotal: paginationTotal,
           newMemberData: {
             username: '',
-            enable: 0,
-            locked: 0
+            enable: '0',
+            locked: '0'
           },
           addMemberModal: false
         });
@@ -243,21 +243,16 @@ class Member extends Component {
     let showPagination;
     let noInfo;
 
-    console.log(userList);
     // 顯示列表
     if (total) {
       showUserList = userList.map((userData) => {
-        let getDate = userData.created_at.slice(0, 10);
-        let getTime = userData.created_at.slice(11, 16);
-        let showTime = getDate + '  ' + getTime;
-
         return(
           <Table.Row key={userData.id}>
             <Table.Cell>{userData.id}</Table.Cell>
             <Table.Cell>{userData.username}</Table.Cell>
             <Table.Cell>{userData.enable}</Table.Cell>
             <Table.Cell>{userData.locked}</Table.Cell>
-            <Table.Cell>{showTime}</Table.Cell>
+            <Table.Cell>{userData.created_at}</Table.Cell>
             <Table.Cell>
               <Button
                 color="teal"
