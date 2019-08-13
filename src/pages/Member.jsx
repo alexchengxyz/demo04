@@ -178,77 +178,38 @@ class Member extends Component {
     let { firstPostsPerPage, postsPerPage, total } = this.state;
     let lastPost = postsPerPage * number;
     let firstPost = lastPost - postsPerPage;
+    let proSearchText = searchText.toLowerCase();
     let searchUrl  = new URLSearchParams();
 
     searchUrl.set('first_result', firstPostsPerPage);
     searchUrl.set('max_results', total);
+    searchUrl.set('id', proSearchText);
+    searchUrl.set('username', proSearchText);
+    searchUrl.set('created_at', proSearchText);
+
+    if (proSearchText === '否') {
+      searchUrl.set('enable', 0);
+      searchUrl.set('locked', 0);
+    }
+
+    if (proSearchText === '是') {
+      searchUrl.set('enable', 1);
+      searchUrl.set('locked', 1);
+    }
 
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
-      let proSearchText = searchText.toString().toLowerCase();
-
-      // 將enable和locked值轉為中文字串
-      let userList = res.data.ret.map((userData) => {
-        let id = userData.id;
-        let username = userData.username;
-        let enable;
-        let locked;
-        let created_at = userData.created_at;
-
-        if (userData.enable === 0) {
-          enable = '否';
-        } else {
-          enable = '是';
-        }
-
-        if (userData.locked === 0) {
-          locked = '否';
-        } else {
-          locked = '是';
-        }
-
-        return { id, username, enable, locked, created_at };
-      });
-
-      // 比對搜尋
-      let processData = userList.filter(item => {
-        return Object.keys(item).some(key =>
-          item[key].toString().toLowerCase().includes(proSearchText)
-        );
-      });
-
-      // 將enable和locked中文字串轉回值
-      let filteredData = processData.map((userData) => {
-        let id = userData.id;
-        let username = userData.username;
-        let enable;
-        let locked;
-        let created_at = userData.created_at;
-
-        if (userData.enable === '否') {
-          enable = 0;
-        } else {
-          enable = 1;
-        }
-
-        if (userData.locked === '否') {
-          locked = 0;
-        } else {
-          locked = 1;
-        }
-
-        return { id, username, enable, locked, created_at };
-      });
-
-      let showPost = filteredData.slice(firstPost, lastPost);
-      let paginationTotal = Math.ceil(filteredData / postsPerPage);
+      let showPost = res.data.ret.slice(firstPost, lastPost);
+      let paginationTotal = Math.ceil(res.data.ret.length / postsPerPage);
 
       this.setState({
         userList: showPost,
         search: searchText,
-        searchTotal: filteredData.length,
+        searchTotal: res.data.ret.length,
         paginationTotal: paginationTotal
       });
     });
+
+    console.log('http://192.168.56.101:9988/api/users?' + searchUrl);
 
   }
 
