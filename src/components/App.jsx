@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { Grid , Menu } from 'semantic-ui-react';
 import Member from '../pages/Member';
 import Index from '../pages/Index';
-import { Grid , Menu } from 'semantic-ui-react';
 import '../assets/css/style.css';
 
 class App extends Component {
   render(){
-    return(
+    return (
       <Router>
         <Menu as="header" className="fixed mythmeme-headder" />
           <Grid className="mytheme-main">

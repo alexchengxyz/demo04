@@ -18,14 +18,14 @@ class Member extends Component {
       paginationTotal: '',
       newMemberData: {
         username: '',
-        enable: '0',
-        locked: '0',
+        enable: 0,
+        locked: 0,
       },
       editMemberData: {
         id: '',
         username: '',
-        enable: '0',
-        locked: '0',
+        enable: 0,
+        locked: 0,
       },
       addMemberModal: false,
       editMemberModal: false,
@@ -85,8 +85,8 @@ class Member extends Component {
           paginationTotal: paginationTotal,
           newMemberData: {
             username: '',
-            enable: '0',
-            locked: '0'
+            enable: 0,
+            locked: 0
           },
           addMemberModal: false
         });
@@ -182,16 +182,70 @@ class Member extends Component {
 
     searchUrl.set('first_result', firstPostsPerPage);
     searchUrl.set('max_results', total);
-    searchUrl.set('username', searchText);
 
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
-      let paginationTotal = Math.ceil(res.data.ret.length / postsPerPage);
-      let showPost = res.data.ret.slice(firstPost, lastPost);
+      let proSearchText = searchText.toString().toLowerCase();
+
+      // 將enable和locked值轉為中文字串
+      let userList = res.data.ret.map((userData) => {
+        let id = userData.id;
+        let username = userData.username;
+        let enable;
+        let locked;
+        let created_at = userData.created_at;
+
+        if (userData.enable === 0) {
+          enable = '否';
+        } else {
+          enable = '是';
+        }
+
+        if (userData.locked === 0) {
+          locked = '否';
+        } else {
+          locked = '是';
+        }
+
+        return { id, username, enable, locked, created_at };
+      });
+
+      // 比對搜尋
+      let processData = userList.filter(item => {
+        return Object.keys(item).some(key =>
+          item[key].toString().toLowerCase().includes(proSearchText)
+        );
+      });
+
+      // 將enable和locked中文字串轉回值
+      let filteredData = processData.map((userData) => {
+        let id = userData.id;
+        let username = userData.username;
+        let enable;
+        let locked;
+        let created_at = userData.created_at;
+
+        if (userData.enable === '否') {
+          enable = 0;
+        } else {
+          enable = 1;
+        }
+
+        if (userData.locked === '否') {
+          locked = 0;
+        } else {
+          locked = 1;
+        }
+
+        return { id, username, enable, locked, created_at };
+      });
+
+      let showPost = filteredData.slice(firstPost, lastPost);
+      let paginationTotal = Math.ceil(filteredData / postsPerPage);
 
       this.setState({
         userList: showPost,
         search: searchText,
-        searchTotal: res.data.ret.length,
+        searchTotal: filteredData.length,
         paginationTotal: paginationTotal
       });
     });
@@ -206,7 +260,7 @@ class Member extends Component {
       this.setState({ search: value });
       this.search(value, 1);
     } else {
-      this.refresh(this.state.activePage);
+      this.refresh(1);
     }
   }
 
@@ -246,13 +300,32 @@ class Member extends Component {
     // 顯示列表
     if (total) {
       showUserList = userList.map((userData) => {
-        return(
+        let showEnable;
+        let showLocked;
+        let getDate = userData.created_at.slice(0, 10);
+        let getTime = userData.created_at.slice(11, 16);
+        let showTime = getDate + ' / ' + getTime;
+
+        // 將enable與locked從值轉為中文字串
+        if (userData.enable === 0) {
+          showEnable = '否';
+        } else {
+          showEnable = '是';
+        }
+
+        if (userData.locked === 0) {
+          showLocked = '否';
+        } else {
+          showLocked = '是';
+        }
+
+        return (
           <Table.Row key={userData.id}>
             <Table.Cell>{userData.id}</Table.Cell>
             <Table.Cell>{userData.username}</Table.Cell>
-            <Table.Cell>{userData.enable}</Table.Cell>
-            <Table.Cell>{userData.locked}</Table.Cell>
-            <Table.Cell>{userData.created_at}</Table.Cell>
+            <Table.Cell>{showEnable}</Table.Cell>
+            <Table.Cell>{showLocked}</Table.Cell>
+            <Table.Cell>{showTime}</Table.Cell>
             <Table.Cell>
               <Button
                 color="teal"
@@ -268,7 +341,7 @@ class Member extends Component {
               </Button>
             </Table.Cell>
           </Table.Row>
-        )
+        );
       });
     }
 
@@ -288,7 +361,7 @@ class Member extends Component {
     if (paginationTotal > 1) {
       showPagination = (
         <div className="ui.clearing.segment">
-          <div style={{float: 'right'}} className="ui pagination menu">
+          <div style={{float: 'right', marginBottom: '40px'}} className="ui pagination menu">
             <Pagination
               activePage={activePage}
               onPageChange={this.handlePaginationChange}
@@ -299,7 +372,7 @@ class Member extends Component {
       );
     }
 
-    return(
+    return (
       <div>
         <Header as="h1" className="dividing artivle-title">會員管理</Header>
 
@@ -356,7 +429,7 @@ class Member extends Component {
                   value={this.state.newMemberData.enable}
                   onChange={(e) => {
                     let {newMemberData} = this.state;
-                    newMemberData.enable = e.target.value;
+                    newMemberData.enable = Number(e.target.value);
                     this.setState({ newMemberData });
                   }}
                 >
@@ -369,7 +442,7 @@ class Member extends Component {
                   value={this.state.newMemberData.locked}
                   onChange={(e) => {
                     let {newMemberData} = this.state;
-                    newMemberData.locked = e.target.value;
+                    newMemberData.locked = Number(e.target.value);
                     this.setState({ newMemberData });
                   }}
                 >
@@ -411,7 +484,7 @@ class Member extends Component {
                   value={this.state.editMemberData.enable}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
-                    editMemberData.enable = e.target.value;
+                    editMemberData.enable = Number(e.target.value);
                     this.setState({ editMemberData });
                   }}
                 >
@@ -424,7 +497,7 @@ class Member extends Component {
                   value={this.state.editMemberData.locked}
                   onChange={(e) => {
                     let {editMemberData} = this.state;
-                    editMemberData.locked = e.target.value;
+                    editMemberData.locked = Number(e.target.value);
                     this.setState({ editMemberData });
                   }}
                 >

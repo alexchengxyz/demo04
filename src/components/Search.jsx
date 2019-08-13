@@ -1,7 +1,6 @@
 import React from 'react';
 
 function Search(props){
-
     // css樣式
     const marginRight = {
       marginRight: '20px'
@@ -17,8 +16,7 @@ function Search(props){
         />
         <i className="search icon"></i>
       </div>
-    )
-
+    );
 }
 
 export default Search
