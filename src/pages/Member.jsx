@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Header, Table, Button, Modal, Form, Message, Pagination } from 'semantic-ui-react';
-import Search from '../components/Search';
 import axios from 'axios';
+import Search from '../components/Search';
 
 const moment = require('moment');
 
