@@ -13,6 +13,7 @@ function Search(props){
           onChange={props.onChange}
           type="text"
           placeholder="搜尋"
+          title="搜尋時間請依照格式搜尋"
         />
         <i className="search icon"></i>
       </div>

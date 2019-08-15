@@ -3,14 +3,14 @@ import { Header, Table, Button, Modal, Form, Message, Pagination } from 'semanti
 import Search from '../components/Search';
 import axios from 'axios';
 
+const moment = require('moment');
+
 class Member extends Component {
   constructor(props) {
     super(props);
     this.state = {
       userList: [],
       activePage: 1,
-      firstPostsPerPage: 0,
-      lastPostsPerPage: 20,
       postsPerPage: 20,
       total: '',
       search: '',
@@ -48,21 +48,19 @@ class Member extends Component {
 
   // 刷新資料
   refresh(number) {
-    let { firstPostsPerPage, lastPostsPerPage, postsPerPage } = this.state;
-    let lastPost = postsPerPage * number;
-    let firstPost = lastPost - postsPerPage;
+    let { postsPerPage } = this.state;
+    let firstPost = (number * postsPerPage) - postsPerPage ;
     let pageNoUrl  = new URLSearchParams();
 
     pageNoUrl.set('first_result', firstPost);
-    pageNoUrl.set('max_results', lastPost);
+    pageNoUrl.set('max_results', postsPerPage);
 
     axios.get('http://192.168.56.101:9988/api/users?' + pageNoUrl).then((res) => {
-      let showPost = res.data.ret.slice(firstPostsPerPage, lastPostsPerPage);
       let itemTotal = res.data.pagination.total;
       let paginationTotal = Math.ceil(itemTotal / postsPerPage);
 
       this.setState({
-        userList: showPost,
+        userList: res.data.ret,
         total: itemTotal,
         search: '',
         paginationTotal: paginationTotal
@@ -175,17 +173,58 @@ class Member extends Component {
 
   // 搜尋
   search(searchText, number) {
-    let { firstPostsPerPage, postsPerPage, total } = this.state;
-    let lastPost = postsPerPage * number;
-    let firstPost = lastPost - postsPerPage;
+    let { postsPerPage } = this.state;
+    let firstPost = (number * postsPerPage) - postsPerPage ;
     let proSearchText = searchText.toLowerCase();
+    let getYear = proSearchText.substring(0,4);
+    let getMoth = proSearchText.substr(5,2);
+    let getDay = proSearchText.substr(8,2);
+    let getHours = proSearchText.substr(13,2);
+    let getMinute = proSearchText.substr(-2);
+    let getDate;
+    let getTime;
+    let getAllTime;
     let searchUrl  = new URLSearchParams();
 
-    searchUrl.set('first_result', firstPostsPerPage);
-    searchUrl.set('max_results', total);
-    searchUrl.set('id', proSearchText);
-    searchUrl.set('username', proSearchText);
-    searchUrl.set('created_at', proSearchText);
+    searchUrl.set('first_result', firstPost);
+    searchUrl.set('max_results', postsPerPage);
+
+    if (!isNaN(proSearchText)) {
+      searchUrl.set('id', proSearchText);
+    }
+
+    //比對年月日
+    if(
+      !isNaN(getYear)
+      && !isNaN(getMoth)
+      && !isNaN(getDay)
+      && proSearchText.length === 10
+      || proSearchText.length === 18
+    ){
+      getDate = getYear + '-' + getMoth + '-' + getDay;
+    }
+
+    //比對所有時間
+    if(
+      !isNaN(getYear)
+      && !isNaN(getMoth)
+      && !isNaN(getDay)
+      && !isNaN(getHours)
+      && !isNaN(getMinute)
+      && proSearchText.length === 18
+    ){
+      getTime = getHours + ':' + getMinute;
+      getAllTime = getYear + '-' + getMoth + '-' + getDay + ' / ' + getTime;
+    }
+
+    if (
+      proSearchText !== '否'
+      && proSearchText !== '是'
+      && proSearchText !== getDate
+      && proSearchText !== getAllTime
+    ) {
+      searchUrl.set('username', proSearchText);
+    }
 
     if (proSearchText === '否') {
       searchUrl.set('enable', 0);
@@ -197,19 +236,35 @@ class Member extends Component {
       searchUrl.set('locked', 1);
     }
 
+    // 搜尋年月日
+    if (proSearchText === getDate && proSearchText.length === 10) {
+      let timeStart = moment().format('T00:00:00+00:00');
+      let timeEnd = moment().format('T24:59:59+59:59');
+
+      searchUrl.set('start_created_at', getDate + timeStart);
+      searchUrl.set('end_created_at', getDate + timeEnd);
+    }
+
+    // 搜尋年月日時
+    if (proSearchText === getAllTime && proSearchText.length === 18) {
+      let timeStart = moment().format(':00+00:00');
+      let timeEnd = moment().format(':59+59:59');
+
+      searchUrl.set('start_created_at', getDate + 'T' + getTime + timeStart);
+      searchUrl.set('end_created_at', getDate + 'T' + getTime + timeEnd);
+    }
+
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
-      let showPost = res.data.ret.slice(firstPost, lastPost);
-      let paginationTotal = Math.ceil(res.data.ret.length / postsPerPage);
+      let itneTotal = res.data.pagination.total;
+      let paginationTotal = Math.ceil(itneTotal / postsPerPage);
 
       this.setState({
-        userList: showPost,
+        userList: res.data.ret,
         search: searchText,
-        searchTotal: res.data.ret.length,
+        searchTotal: itneTotal,
         paginationTotal: paginationTotal
       });
     });
-
-    console.log('http://192.168.56.101:9988/api/users?' + searchUrl);
 
   }
 
