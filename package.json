@@ -1,5 +1,5 @@
 {
-  "name": "case4",
+  "name": "test",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,11 +7,17 @@
     "start": "webpack-dev-server --mode development --open --hot",
     "build": "webpack --mode production",
     "api-server": "node api/index.js",
-    "lint": "eslint --fix src/*.js"
+    "lint": "eslint --fix src/*.js",
+    "test": "jest"
   },
   "pre-commit": [
     "lint"
   ],
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -28,19 +34,22 @@
     "semantic-ui-react": "^0.87.3"
   },
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.4",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
-    "css-loader": "^3.1.0",
-    "eslint": "^6.1.0",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-eslint": "^8.2.6",
+    "babel-jest": "^24.9.0",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.2.0",
+    "eslint": "^4.19.1",
+    "eslint-plugin-jest": "^22.15.1",
     "eslint-plugin-react": "^7.14.3",
     "html-webpack-plugin": "^3.2.0",
-    "pre-commit": "^1.2.2",
-    "style-loader": "^0.23.1",
-    "webpack": "^4.36.1",
+    "jest": "^24.9.0",
+    "style-loader": "^1.0.0",
+    "webpack": "^4.39.2",
     "webpack-cli": "^3.3.6",
     "webpack-dev": "^1.1.1",
-    "webpack-dev-server": "^3.7.2"
+    "webpack-dev-server": "^3.8.0"
   }
 }
