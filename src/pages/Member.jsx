@@ -255,13 +255,13 @@ class Member extends Component {
     }
 
     axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
-      let itneTotal = res.data.pagination.total;
-      let paginationTotal = Math.ceil(itneTotal / postsPerPage);
+      let dataPageTotal = res.data.pagination.total;
+      let paginationTotal = Math.ceil(dataPageTotal / postsPerPage);
 
       this.setState({
         userList: res.data.ret,
         search: searchText,
-        searchTotal: itneTotal,
+        searchTotal: dataPageTotal,
         paginationTotal: paginationTotal
       });
     });
