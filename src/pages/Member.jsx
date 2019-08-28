@@ -336,7 +336,7 @@ class Member extends Component {
         }
 
         return (
-          <Table.Row key={userData.id}>
+          <Table.Row key={userData.id} data-testid="displayList">
             <Table.Cell>{userData.id}</Table.Cell>
             <Table.Cell>{userData.username}</Table.Cell>
             <Table.Cell>{showEnable}</Table.Cell>
