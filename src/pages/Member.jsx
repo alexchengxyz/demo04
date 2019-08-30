@@ -420,7 +420,7 @@ class Member extends Component {
         {showPagination}
 
         {/* 彈跳視窗 - 新增資料 */}
-        <Modal open={this.state.addMemberModal} >
+        <Modal open={this.state.addMemberModal} data-testid="addMemberModal">
           <Modal.Header>新增會員</Modal.Header>
           <Modal.Content>
             <Form error={this.state.addError}>
@@ -435,6 +435,8 @@ class Member extends Component {
                     newMemberData.username = e.target.value;
                     this.setState({ newMemberData });
                   }}
+                  id="lastName"
+                  data-testid="username-input-addMember"
                 />
               </Form.Group>
               <Message error content="請填寫姓名" />
@@ -475,7 +477,7 @@ class Member extends Component {
         </Modal>
 
         {/* 彈跳視窗 - 編輯資料 */}
-        <Modal open={this.state.editMemberModal} >
+        <Modal open={this.state.editMemberModal} data-testid="editMemberModal">
           <Modal.Header>修改會員資料</Modal.Header>
           <Modal.Content>
             <Form error={this.state.editError}>

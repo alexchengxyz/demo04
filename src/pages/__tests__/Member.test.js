@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, cleanup, waitForElement } from '@testing-library/react';
+import { render, cleanup, waitForElement, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import axios from 'axios';
 import Member from '../Member';
@@ -45,4 +45,47 @@ test('test Member can render 20 item', async () => {
   const item = await waitForElement( () => getAllByTestId('displayList') );
 
   expect(item.length).toBe(20);
+});
+
+test('click add member button will execute new toggle modal', () => {
+  const { getByTestId, getByText } = render(<Member />);
+  let addButton = getByText('新增會員');
+
+  fireEvent.click(addButton);
+
+  // 打開新增會員視窗
+  expect(getByTestId('addMemberModal')).toHaveTextContent('新增會員');
+
+  const inputName = getByTestId('username-input-addMember');
+
+  console.log(inputName.parentNode.innerHTML);
+
+  fireEvent.change(inputName.querySelector('input'), { target: { value: 'alex' } });
+
+
+});
+
+test('click edit member button will execute edit toggle modal', async () => {
+  const userList = [
+    { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  ]
+
+  const resp = {
+    data: {
+      ret: userList,
+      pagination: { total: userList.length }
+    }
+  };
+
+  axios.get.mockResolvedValue(resp);
+
+  const { getByTestId, getByText } = render(<Member />);
+
+  await waitForElement( () => getByTestId('displayList') );
+
+  let editButton = getByText('編輯');
+
+  fireEvent.click(editButton);
+
+  expect(getByTestId('editMemberModal')).toHaveTextContent('修改會員資料');
 });
