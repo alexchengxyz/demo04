@@ -435,8 +435,6 @@ class Member extends Component {
                     newMemberData.username = e.target.value;
                     this.setState({ newMemberData });
                   }}
-                  id="lastName"
-                  data-testid="username-input-addMember"
                 />
               </Form.Group>
               <Message error content="請填寫姓名" />
@@ -450,6 +448,7 @@ class Member extends Component {
                     newMemberData.enable = Number(e.target.value);
                     this.setState({ newMemberData });
                   }}
+                  data-testid="addMemberEnable"
                 >
                   <option value="0">否</option>
                   <option value="1">是</option>
@@ -463,6 +462,7 @@ class Member extends Component {
                     newMemberData.locked = Number(e.target.value);
                     this.setState({ newMemberData });
                   }}
+                  data-testid="addMemberLocked"
                 >
                   <option value="0">否</option>
                   <option value="1">是</option>
