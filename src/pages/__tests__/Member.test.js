@@ -3,6 +3,7 @@ import { render, cleanup, waitForElement, fireEvent } from '@testing-library/rea
 import '@testing-library/jest-dom/extend-expect';
 import axios from 'axios';
 import Member from '../Member';
+import Search from '../../components/Search';
 
 jest.mock('axios');
 
@@ -64,29 +65,25 @@ test('click add member button will execute new toggle modal', async () => {
   expect(getByTestId('addMemberEnable').value).toBe('1');
   expect(getByTestId('addMemberLocked').value).toBe('0');
 
-  //fireEvent.click(getByText('確定'));
-
-  // const userList = [
-  //   { id: 1, username: "alex", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  // const addUserList = [
+  //   { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
   // ]
 
-  // const resp = {
+  // const addResp = {
   //   data: {
-  //     ret: userList,
-  //     pagination: { total: userList.length }
+  //     ret: addUserList,
+  //     pagination: { total: addUserList.length }
   //   }
   // };
 
-  // axios.get.mockResolvedValue(resp);
+  // axios.post.mockResolvedValue(addResp);
+  // axios.get.mockResolvedValue(addResp);
 
-  // await waitForElement( () => getByTestId('displayList') );
+  // const { getAllByTestId } = render(<Member />);
+  // const addItem = await waitForElement( () => getAllByTestId('displayList') );
 
-  //let newMemberData = { username: 'alex', enable: 1, locked: 0 }
-
-  //expect(axios.post).toHaveBeenCalledWith('/api/user', {data: newMemberData });
-
-  //console.log(addMemberModal.innerHTML);
-
+  // expect(addItem.length).toBe(21);
+  // fireEvent.click(getByText('確定'));
 });
 
 test('click edit member button will execute edit toggle modal', async () => {
@@ -113,3 +110,68 @@ test('click edit member button will execute edit toggle modal', async () => {
 
   expect(getByTestId('editMemberModal')).toHaveTextContent('修改會員資料');
 });
+
+
+
+test('search input', async () => {
+  const { getByPlaceholderText } = render(<Search />);
+  const searchInput = getByPlaceholderText('搜尋');
+  fireEvent.change(searchInput, { target: { value: 'user1' } });
+
+  if(searchInput.value) {
+    expect(searchInput.value).toBe('user1');
+  }
+
+  const userList = [
+    { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  ]
+
+  const resp = {
+    data: {
+      ret: userList,
+      pagination: { total: userList.length }
+    }
+  };
+
+  axios.get.mockResolvedValue(resp);
+
+  const { getAllByTestId } = render(<Member />);
+  const item = await waitForElement( () => getAllByTestId('displayList') );
+  console.log(item.innerHTML);
+  expect(item[0].innerHTML).toMatch(/user1/);
+});
+
+
+test('delete item', async () => {
+  const userList = [
+    { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+    { id: 2, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  ]
+
+  const resp = {
+    data: {
+      ret: userList,
+      pagination: { total: userList.length }
+    }
+  };
+
+  axios.get.mockResolvedValue(resp);
+
+  // const { getAllByTestId, getAllByText } = render(<Member />);
+  // await waitForElement( () => getAllByTestId('displayList') );
+
+  // fireEvent.click(getAllByText('刪除')[0]);
+
+  // window.confirm = true;
+
+  // if(window.confirm === true) {
+  //   axios.delete.mockResolvedValue(resp.data[1]);
+  //   console.log(axios.delete);
+  //   expect(axios.delete).toHaveBeenCalledTimes(1);
+  // }
+
+  //expect(item.length).toBe(0);
+
+  //expect().toMatch(/user1/);
+});
+
