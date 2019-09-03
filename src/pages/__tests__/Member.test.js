@@ -111,14 +111,12 @@ test('click edit member button will execute edit toggle modal', async () => {
   expect(getByTestId('editMemberModal')).toHaveTextContent('修改會員資料');
 });
 
-
-
 test('search input', async () => {
   const { getByPlaceholderText } = render(<Search />);
   const searchInput = getByPlaceholderText('搜尋');
   fireEvent.change(searchInput, { target: { value: 'user1' } });
 
-  if(searchInput.value) {
+  if (searchInput.value) {
     expect(searchInput.value).toBe('user1');
   }
 
@@ -137,10 +135,8 @@ test('search input', async () => {
 
   const { getAllByTestId } = render(<Member />);
   const item = await waitForElement( () => getAllByTestId('displayList') );
-  console.log(item.innerHTML);
   expect(item[0].innerHTML).toMatch(/user1/);
 });
-
 
 test('delete item', async () => {
   const userList = [
@@ -157,21 +153,20 @@ test('delete item', async () => {
 
   axios.get.mockResolvedValue(resp);
 
-  // const { getAllByTestId, getAllByText } = render(<Member />);
-  // await waitForElement( () => getAllByTestId('displayList') );
+  const { getAllByTestId, getAllByText } = render(<Member />);
+  const item = await waitForElement( () => getAllByTestId('displayList') );
 
-  // fireEvent.click(getAllByText('刪除')[0]);
+  fireEvent.click(getAllByText('刪除')[0]);
 
-  // window.confirm = true;
+  // let mockConfirm = jest.fn();
 
-  // if(window.confirm === true) {
-  //   axios.delete.mockResolvedValue(resp.data[1]);
-  //   console.log(axios.delete);
-  //   expect(axios.delete).toHaveBeenCalledTimes(1);
-  // }
+  // mockConfirm = true;
 
-  //expect(item.length).toBe(0);
+  // await mockConfirm;
 
-  //expect().toMatch(/user1/);
+  // axios.get.mockResolvedValue(resp);
+
+  // expect(item.length).toBe(20);
+
 });
 
