@@ -70,14 +70,15 @@ class Member extends Component {
 
   // 新增資料
   addMember() {
-    let { userList, total, paginationTotal, newMemberData } = this.state;
+    let { newMemberData } = this.state;
 
     if (newMemberData.username) {
       axios.post('http://192.168.56.101:9988/api/user', newMemberData).then((res) => {
-        userList.push(res.data.ret);
+        let { userList, total, paginationTotal } = this.state;
+        const newUserList = [res.data.ret, ...userList];
 
         this.setState({
-          userList: userList,
+          userList: newUserList,
           activePage: 1,
           total: total + 1,
           paginationTotal: paginationTotal,
@@ -505,6 +506,7 @@ class Member extends Component {
                     editMemberData.enable = Number(e.target.value);
                     this.setState({ editMemberData });
                   }}
+                  data-testid="editMemberEnable"
                 >
                   <option value="0">否</option>
                   <option value="1">是</option>
@@ -518,6 +520,7 @@ class Member extends Component {
                     editMemberData.locked = Number(e.target.value);
                     this.setState({ editMemberData });
                   }}
+                  data-testid="editMemberLocked"
                 >
                   <option value="0">否</option>
                   <option value="1">是</option>

@@ -48,16 +48,22 @@ test('test Member can render 20 item', async () => {
   expect(item.length).toBe(20);
 });
 
-test('click add member button will execute new toggle modal', async () => {
-  const { getByTestId, getByText } = render(<Member />);
+test('enter information and return item', async () => {
+  const { getByTestId, findAllByTestId, getByText } = render(<Member />);
   let addButton = getByText('新增會員');
 
-  fireEvent.click(addButton);
-  let addMemberModal = getByTestId('addMemberModal');
+  const resp = {
+    data: {
+      ret: { id: 21, username: "alex", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" }
+    }
+  }
 
   // 打開新增會員視窗
+  fireEvent.click(addButton);
+  let addMemberModal = getByTestId('addMemberModal');
   expect(addMemberModal).toHaveTextContent('新增會員');
 
+  // 輸入資料並送出
   fireEvent.change(addMemberModal.querySelector('input'), { target: { value: 'alex' } });
   fireEvent.change(getByTestId('addMemberEnable'), { target: { value: '1' } });
   fireEvent.change(getByTestId('addMemberLocked'), { target: { value: '0' } });
@@ -65,50 +71,70 @@ test('click add member button will execute new toggle modal', async () => {
   expect(getByTestId('addMemberEnable').value).toBe('1');
   expect(getByTestId('addMemberLocked').value).toBe('0');
 
-  // const addUserList = [
-  //   { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-  // ]
+  axios.post.mockResolvedValue(resp);
+  await fireEvent.click(getByText('確定'));
 
-  // const addResp = {
-  //   data: {
-  //     ret: addUserList,
-  //     pagination: { total: addUserList.length }
-  //   }
-  // };
+  // 取回列表資料
+  const addItem = await findAllByTestId('displayList');
 
-  // axios.post.mockResolvedValue(addResp);
-  // axios.get.mockResolvedValue(addResp);
-
-  // const { getAllByTestId } = render(<Member />);
-  // const addItem = await waitForElement( () => getAllByTestId('displayList') );
-
-  // expect(addItem.length).toBe(21);
-  // fireEvent.click(getByText('確定'));
+  expect(addItem.length).toBe(21);
+  expect(addItem[0].textContent).toEqual('21alex是否2019-08-13 / 17:54編輯刪除')
 });
 
-test('click edit member button will execute edit toggle modal', async () => {
-  const userList = [
-    { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-  ]
+test('enter null value and show error message', () => {
+  const { getByTestId, getByText } = render(<Member />);
+  let addButton = getByText('新增會員');
 
+  // 打開新增會員視窗
+  fireEvent.click(addButton);
+  let addMemberModal = getByTestId('addMemberModal');
+  expect(addMemberModal).toHaveTextContent('新增會員');
+
+  // 輸入資料並送出
+  fireEvent.change(addMemberModal.querySelector('input'), { target: { value: '' } });
+  fireEvent.change(getByTestId('addMemberEnable'), { target: { value: '1' } });
+  fireEvent.change(getByTestId('addMemberLocked'), { target: { value: '0' } });
+  fireEvent.click(getByText('確定'));
+
+  expect(addMemberModal.querySelector('form')).toHaveClass('error');
+});
+
+test('edit member and finish edit result', async () => {
+  const { getByTestId, getAllByTestId, getByText, getAllByText, findAllByTestId, container } = render(<Member />);
+  await waitForElement( () => getAllByTestId('displayList') );
+  let editButton = getAllByText('編輯');
   const resp = {
     data: {
-      ret: userList,
-      pagination: { total: userList.length }
+      ret: { id: 1, username: "bob", enable: 1, locked: 1, created_at: "2019-08-13T17:54:31+00:00" }
     }
-  };
+  }
 
-  axios.get.mockResolvedValue(resp);
+  // 打開編輯視窗
+  fireEvent.click(editButton[0]);
 
-  const { getByTestId, getByText } = render(<Member />);
+  let editMemberModal = getByTestId('editMemberModal');
+  let clickUpdate = getByText('更新');
 
-  await waitForElement( () => getByTestId('displayList') );
+  expect(editMemberModal.querySelector('input').value).toBe('user1');
 
-  let editButton = getByText('編輯');
+  // 更換內容並送出
+  fireEvent.change(editMemberModal.querySelector('input'), { target: { value: 'bob' } });
+  fireEvent.change(getByTestId('editMemberEnable'), { target: { value: '1' } });
+  fireEvent.change(getByTestId('editMemberLocked'), { target: { value: '1' } });
 
-  fireEvent.click(editButton);
+  expect(getByTestId('editMemberEnable').value).toBe('1');
+  expect(getByTestId('editMemberLocked').value).toBe('1');
 
-  expect(getByTestId('editMemberModal')).toHaveTextContent('修改會員資料');
+  axios.put.mockResolvedValue(resp);
+  await fireEvent.click(clickUpdate);
+
+  let item = await findAllByTestId('displayList');
+
+  // 為何 rneder出來還是20筆? 前面已有新增
+  console.log(item.length);
+  // 已有 aiox.put 已更換內容但卻無更換
+  console.log(item[0].innerHTML);
+
 });
 
 test('search input', async () => {
@@ -139,24 +165,24 @@ test('search input', async () => {
 });
 
 test('delete item', async () => {
-  const userList = [
-    { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-    { id: 2, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-  ]
+  // const userList = [
+  //   { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  //   { id: 2, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+  // ]
 
-  const resp = {
-    data: {
-      ret: userList,
-      pagination: { total: userList.length }
-    }
-  };
+  // const resp = {
+  //   data: {
+  //     ret: userList,
+  //     pagination: { total: userList.length }
+  //   }
+  // };
 
-  axios.get.mockResolvedValue(resp);
+  // axios.get.mockResolvedValue(resp);
 
-  const { getAllByTestId, getAllByText } = render(<Member />);
-  const item = await waitForElement( () => getAllByTestId('displayList') );
+  // const { getAllByTestId, getAllByText } = render(<Member />);
+  // const item = await waitForElement( () => getAllByTestId('displayList') );
 
-  fireEvent.click(getAllByText('刪除')[0]);
+  // fireEvent.click(getAllByText('刪除')[0]);
 
   // let mockConfirm = jest.fn();
 
