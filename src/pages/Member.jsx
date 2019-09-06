@@ -71,7 +71,6 @@ class Member extends Component {
   // 新增資料
   addMember() {
     let { newMemberData } = this.state;
-
     if (newMemberData.username) {
       axios.post('http://192.168.56.101:9988/api/user', newMemberData).then((res) => {
         let { userList, total, paginationTotal } = this.state;
