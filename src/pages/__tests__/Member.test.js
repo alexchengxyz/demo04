@@ -230,37 +230,46 @@ describe('search result', () => {
   });
 });
 
-
-test('delete item', async () => {
-  // const userList = [
-  //   { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-  //   { id: 2, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-  // ]
-
-  // const resp = {
-  //   data: {
-  //     ret: userList,
-  //     pagination: { total: userList.length }
-  //   }
-  // };
-
-  // axios.get.mockResolvedValue(resp);
-
-  // const { getAllByTestId, getAllByText } = render(<Member />);
-  // const item = await waitForElement( () => getAllByTestId('displayList') );
-
-  // fireEvent.click(getAllByText('刪除')[0]);
-
-  // let mockConfirm = jest.fn();
-
-  // mockConfirm = true;
-
-  // await mockConfirm;
-
-  // axios.get.mockResolvedValue(resp);
-
-  // expect(item.length).toBe(20);
-
+describe('delete item', () => {
+  test('delete item amd check it finish', async () => {
+    window.confirm = jest.fn(() => true);
+    const { findAllByTestId, getAllByText } = render(<Member />);
+  
+    const deleteResp = {
+      data: {
+        ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      }
+    };
+  
+    // 取回列表資料
+    await findAllByTestId('displayList');
+  
+    const mockDelet = axios.delete.mockResolvedValue(deleteResp);
+  
+    await fireEvent.click(getAllByText('刪除')[0]);
+  
+    expect(mockDelet).toBeCalled();
+  });
+  
+  test('delete item but click cancel button', async () => {
+    window.confirm = jest.clearAllMocks();
+    window.confirm = jest.fn(() => false)
+    const { findAllByTestId, getAllByText } = render(<Member />);
+    const deleteResp = {
+      data: {
+        ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      }
+    };
+  
+    // 取回列表資料
+    await findAllByTestId('displayList');
+  
+    const mockDelet = axios.delete.mockResolvedValue(deleteResp);
+  
+    await fireEvent.click(getAllByText('刪除')[0]);
+  
+    expect(mockDelet).not.toBeCalled();
+  });
 });
 
 test('Member render item > 20 and show pagination', async () => {
@@ -302,8 +311,9 @@ test('Member render item > 20 and show pagination', async () => {
 
   const { getByRole } = render(<Member />);
   const item = await waitForElement( () => getByRole('navigation') );
+  const nextButton = item.querySelectorAll('a')[3];
 
-  // expect(item).toHaveLength(22);
-  expect(item.innerHTML).querySelector('a').('ui.clearing.segment');
-  //console.log(item.innerHTML);
+  expect(nextButton).toHaveTextContent('2');
+
+  fireEvent.click(nextButton);
 });

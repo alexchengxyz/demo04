@@ -8,7 +8,8 @@
     "build": "webpack --mode production",
     "api-server": "node api/index.js",
     "lint": "eslint --fix src/*.js",
-    "test": "jest --watchAll"
+    "test-w": "jest --watchAll",
+    "test-c": "jest --coverage"
   },
   "pre-commit": [
     "lint"
