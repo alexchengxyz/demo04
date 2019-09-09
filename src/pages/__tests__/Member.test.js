@@ -3,7 +3,6 @@ import { render, cleanup, waitForElement, fireEvent } from '@testing-library/rea
 import '@testing-library/jest-dom/extend-expect';
 import axios from 'axios';
 import Member from '../Member';
-import Search from '../../components/Search';
 
 jest.mock('axios');
 
@@ -165,7 +164,7 @@ describe('edit member and finish edit result', () => {
       }
     };
 
-    // 重製mock並回傳編輯後的mock
+    // 重製mock並回傳新的mock
     axios.get.mockRestore();
     axios.get.mockResolvedValue(resp);
 
@@ -179,54 +178,112 @@ describe('edit member and finish edit result', () => {
 describe('search result', () => {
   afterEach(cleanup);
 
-  test('search username', async () => {
-    const { getByPlaceholderText } = render(<Search />);
+  // test('enter null value and check input value', () => {
+  //   const { getByPlaceholderText } = render(<Member />);
+  //   const searchInput = getByPlaceholderText('搜尋');
+
+  //   fireEvent.change(searchInput, { target: { value: ''; } });
+
+  //   expect(searchInput.value).toBe('');
+  // });
+
+  test('enter id and check input value', () => {
+    const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
-    const resp = {
-      data: {
-        ret: [
-          { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" }
-        ],
-        pagination: { total: 1 }
-      }
-    };
+
+    fireEvent.change(searchInput, { target: { value: '1' } });
+
+    expect(searchInput.value).toBe('1');
+  });
+
+  test('enter username and check input value', () => {
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
 
     fireEvent.change(searchInput, { target: { value: 'user1' } });
 
     expect(searchInput.value).toBe('user1');
-
-    // 重製mock並回傳編輯後的mock
-    axios.get.mockRestore();
-    axios.get.mockResolvedValue(resp);
-
-    const { getAllByTestId } = render(<Member />);
-    const item = await waitForElement( () => getAllByTestId('displayList') );
-    expect(item[0].innerHTML).toMatch(/user1/);
   });
 
-  test('search item of year,month,day', async () => {
-    const { getByPlaceholderText } = render(<Search />);
+  test('enter 否 and check select value', () => {
+    const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
-    const resp = {
-      data: {
-        ret: [
-          { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" }
-        ],
-        pagination: { total: 1 }
-      }
-    };
+
+    fireEvent.change(searchInput, { target: { value: '否' } });
+
+    expect(searchInput.value).toBe('否');
+  });
+
+  test('enter 是 and check select value', () => {
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
+
+    fireEvent.change(searchInput, { target: { value: '是' } });
+
+    expect(searchInput.value).toBe('是');
+  });
+
+  test('enter year,month,day and check input value', () => {
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
 
     fireEvent.change(searchInput, { target: { value: '2019-08-13' } });
 
     expect(searchInput.value).toBe('2019-08-13');
+  });
 
-    // 重製mock並回傳編輯後的mock
-    axios.get.mockRestore();
-    axios.get.mockResolvedValue(resp);
+  test('enter year,month,day,time and check input value', () => {
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
 
-    const { getAllByTestId } = render(<Member />);
-    const item = await waitForElement( () => getAllByTestId('displayList') );
-    expect(item[0].innerHTML).toMatch(/2019-08-13/);
+    fireEvent.change(searchInput, { target: { value: '2019-08-13 / 17:54' } });
+
+    expect(searchInput.value).toBe('2019-08-13 / 17:54');
+  });
+
+  test('enter value and delete item', async () => {
+    window.confirm = jest.fn(() => true);
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
+
+    fireEvent.change(searchInput, { target: { value: 'user1' } });
+
+    const { findAllByTestId, getAllByText } = render(<Member />);
+
+    // 取回列表資料
+    await findAllByTestId('displayList');
+
+    const mockDelet = axios.delete.mockResolvedValue();
+
+    await fireEvent.click(getAllByText('刪除')[0]);
+
+    expect(mockDelet).toBeCalled();
+  });
+
+  test('enter search value and edit item', async () => {
+    const { getByPlaceholderText } = render(<Member />);
+    const searchInput = getByPlaceholderText('搜尋');
+
+    // 輸入搜尋欄位
+    fireEvent.change(searchInput, { target: { value: 'user1' } });
+
+    const { findAllByTestId } = render(<Member />);
+
+    // 取回列表資料
+    await findAllByTestId('displayList');
+
+    const { getByText, getAllByText } = render(<Member />);
+
+    // 打開編輯視窗
+    await fireEvent.click(getAllByText('編輯')[0]);
+
+    const clickUpdate = getByText('更新');
+    const mockEdit = axios.put.mockResolvedValue();
+
+    // 點擊更新
+    await fireEvent.click(clickUpdate);
+
+    expect(mockEdit).toBeCalled();
   });
 });
 
@@ -234,23 +291,23 @@ describe('delete item', () => {
   test('delete item amd check it finish', async () => {
     window.confirm = jest.fn(() => true);
     const { findAllByTestId, getAllByText } = render(<Member />);
-  
+
     const deleteResp = {
       data: {
         ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
       }
     };
-  
+
     // 取回列表資料
     await findAllByTestId('displayList');
-  
+
     const mockDelet = axios.delete.mockResolvedValue(deleteResp);
-  
+
     await fireEvent.click(getAllByText('刪除')[0]);
-  
+
     expect(mockDelet).toBeCalled();
   });
-  
+
   test('delete item but click cancel button', async () => {
     window.confirm = jest.clearAllMocks();
     window.confirm = jest.fn(() => false)
@@ -260,14 +317,14 @@ describe('delete item', () => {
         ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
       }
     };
-  
+
     // 取回列表資料
     await findAllByTestId('displayList');
-  
+
     const mockDelet = axios.delete.mockResolvedValue(deleteResp);
-  
+
     await fireEvent.click(getAllByText('刪除')[0]);
-  
+
     expect(mockDelet).not.toBeCalled();
   });
 });
@@ -294,8 +351,7 @@ test('Member render item > 20 and show pagination', async () => {
     { id: 18, username: "user18", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
     { id: 19, username: "user19", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
     { id: 20, username: "user20", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-    { id: 21, username: "user20", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-    { id: 22, username: "user20", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+    { id: 21, username: "user21", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
   ]
 
   const resp = {
@@ -305,7 +361,7 @@ test('Member render item > 20 and show pagination', async () => {
     }
   };
 
-  // 重製mock並回傳編輯後的mock
+  // 重製mock並回傳新的mock
   axios.get.mockRestore();
   axios.get.mockResolvedValue(resp);
 
@@ -316,4 +372,67 @@ test('Member render item > 20 and show pagination', async () => {
   expect(nextButton).toHaveTextContent('2');
 
   fireEvent.click(nextButton);
+});
+
+describe('delete item and check page', () => {
+  test('delete item amd retun result, page 2 become to 1', async () => {
+    window.confirm = jest.fn(() => true);
+
+    const userList = [
+      { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 2, username: "user2", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 3, username: "user3", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 4, username: "user4", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 5, username: "user5", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 6, username: "user6", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 7, username: "user7", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 8, username: "user8", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 9, username: "user9", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 10, username: "user10", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 11, username: "user11", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 12, username: "user12", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 13, username: "user13", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 14, username: "user14", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 15, username: "user15", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 16, username: "user16", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 17, username: "user17", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 18, username: "user18", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
+      { id: 19, username: "user19", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      { id: 20, username: "user20", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+      { id: 21, username: "user21", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
+    ]
+
+    const newResp = {
+      data: {
+        ret: userList,
+        pagination: { total: userList.length }
+      }
+    };
+
+    const deleteResp = {
+      data: {
+        ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
+      }
+    };
+
+    // 重製mock並回傳新的mock
+    axios.get.mockRestore();
+    axios.get.mockResolvedValue(newResp);
+
+    const { getAllByTestId } = render(<Member />);
+    const item = await waitForElement( () => getAllByTestId('displayList') );
+
+    console.log(item.length);
+
+    const { getAllByText } = render(<Member />);
+
+    axios.delete.mockResolvedValue(deleteResp);
+
+    await fireEvent.click(getAllByText('刪除')[0]);
+
+    const { findAllByTestId } = render(<Member />);
+    const returnItem = await findAllByTestId('displayList');
+    // 數量變42 ?
+    console.log(returnItem.length);
+  });
 });
