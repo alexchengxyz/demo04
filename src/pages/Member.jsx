@@ -193,7 +193,7 @@ class Member extends Component {
       searchUrl.set('id', proSearchText);
     }
 
-    //比對年月日
+    // 比對年月日
     if(
       !isNaN(getYear)
       && !isNaN(getMoth)
@@ -204,7 +204,7 @@ class Member extends Component {
       getDate = getYear + '-' + getMoth + '-' + getDay;
     }
 
-    //比對所有時間
+    // 比對所有時間
     if(
       !isNaN(getYear)
       && !isNaN(getMoth)
@@ -269,26 +269,20 @@ class Member extends Component {
   }
 
   searchChange(e){
-    this.setState({ activePage: 1 })
+    let value = e.target.value;
 
-    if (e.target.value) {
-      let value = e.target.value;
-      this.setState({ search: value });
-      this.search(value, 1);
-    } else {
-      this.refresh(1);
-    }
+    this.setState({
+      search: value,
+      activePage: 1
+    });
+
+    this.search(value, 1);
   }
 
   // 分頁刷頁
   handlePaginationChange(e, {activePage}) {
     this.setState({ activePage });
-
-    if (this.state.search){
-      this.search(this.state.search, activePage);
-    } else {
-      this.refresh(activePage);
-    }
+    this.search(this.state.search, activePage);
   }
 
   // 彈跳視窗 - 新增資料

@@ -8,7 +8,7 @@ jest.mock('axios');
 
 afterEach(cleanup);
 
-test('test Member can render 20 item', async () => {
+test('first render show 20 item', async () => {
   const userList = [
     { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
     { id: 2, username: "user2", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
@@ -47,7 +47,7 @@ test('test Member can render 20 item', async () => {
   expect(item).toHaveLength(20);
 });
 
-test('enter information and return item', async () => {
+test('add new item', async () => {
   const { getByTestId, findAllByTestId, getByText } = render(<Member />);
   let addButton = getByText('新增會員');
 
@@ -98,7 +98,7 @@ test('enter null value and show error message', () => {
   expect(addMemberModal.querySelector('form')).toHaveClass('error');
 });
 
-describe('edit member and finish edit result', () => {
+describe('edit item and finish edit result', () => {
   afterEach(cleanup);
 
   test('username is null and send edit message,check have error class', async () => {
@@ -177,15 +177,6 @@ describe('edit member and finish edit result', () => {
 
 describe('search result', () => {
   afterEach(cleanup);
-
-  // test('enter null value and check input value', () => {
-  //   const { getByPlaceholderText } = render(<Member />);
-  //   const searchInput = getByPlaceholderText('搜尋');
-
-  //   fireEvent.change(searchInput, { target: { value: ''; } });
-
-  //   expect(searchInput.value).toBe('');
-  // });
 
   test('enter id and check input value', () => {
     const { getByPlaceholderText } = render(<Member />);
@@ -329,7 +320,7 @@ describe('delete item', () => {
   });
 });
 
-test('Member render item > 20 and show pagination', async () => {
+test('first render, the item total > 20 and show pagination', async () => {
   const userList = [
     { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
     { id: 2, username: "user2", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
@@ -365,7 +356,13 @@ test('Member render item > 20 and show pagination', async () => {
   axios.get.mockRestore();
   axios.get.mockResolvedValue(resp);
 
-  const { getByRole } = render(<Member />);
+  const { findAllByTestId, getByRole, getByPlaceholderText } = render(<Member />);
+  const searchInput = getByPlaceholderText('搜尋');
+
+  fireEvent.change(searchInput, { target: { value: null } });
+
+  await findAllByTestId('displayList');
+
   const item = await waitForElement( () => getByRole('navigation') );
   const nextButton = item.querySelectorAll('a')[3];
 
@@ -374,65 +371,16 @@ test('Member render item > 20 and show pagination', async () => {
   fireEvent.click(nextButton);
 });
 
-describe('delete item and check page', () => {
-  test('delete item amd retun result, page 2 become to 1', async () => {
-    window.confirm = jest.fn(() => true);
+test('delete item amd retun result, pagination 2 become to 1', async () => {
+  window.confirm = jest.fn(() => true);
 
-    const userList = [
-      { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 2, username: "user2", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 3, username: "user3", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 4, username: "user4", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 5, username: "user5", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 6, username: "user6", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 7, username: "user7", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 8, username: "user8", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 9, username: "user9", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 10, username: "user10", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 11, username: "user11", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 12, username: "user12", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 13, username: "user13", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 14, username: "user14", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 15, username: "user15", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 16, username: "user16", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 17, username: "user17", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 18, username: "user18", enable: 0, locked: 0, created_at: "2019-08-10T09:47:22+00:00" },
-      { id: 19, username: "user19", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      { id: 20, username: "user20", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-      { id: 21, username: "user21", enable: 1, locked: 0, created_at: "2019-08-09T18:40:50+00:00" },
-    ]
+  const { findAllByTestId, getAllByText, getByRole } = render(<Member />);
+  const item = await waitForElement( () => getByRole('navigation') );
+  const nextButton = item.querySelectorAll('a')[3];
 
-    const newResp = {
-      data: {
-        ret: userList,
-        pagination: { total: userList.length }
-      }
-    };
+  fireEvent.click(nextButton);
+  axios.delete.mockResolvedValue();
 
-    const deleteResp = {
-      data: {
-        ret: { id: 1, username: "user1", enable: 1, locked: 0, created_at: "2019-08-13T17:54:31+00:00" },
-      }
-    };
-
-    // 重製mock並回傳新的mock
-    axios.get.mockRestore();
-    axios.get.mockResolvedValue(newResp);
-
-    const { getAllByTestId } = render(<Member />);
-    const item = await waitForElement( () => getAllByTestId('displayList') );
-
-    console.log(item.length);
-
-    const { getAllByText } = render(<Member />);
-
-    axios.delete.mockResolvedValue(deleteResp);
-
-    await fireEvent.click(getAllByText('刪除')[0]);
-
-    const { findAllByTestId } = render(<Member />);
-    const returnItem = await findAllByTestId('displayList');
-    // 數量變42 ?
-    console.log(returnItem.length);
-  });
+  await findAllByTestId('displayList');
+  await fireEvent.click(getAllByText('刪除')[0]);
 });
