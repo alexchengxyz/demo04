@@ -371,6 +371,24 @@ test('first render, the item total > 20 and show pagination', async () => {
   fireEvent.click(nextButton);
 });
 
+test('search item and show pagination', async () => {
+  const { findAllByTestId, getByPlaceholderText, getByRole } = render(<Member />);
+  const searchInput = getByPlaceholderText('搜尋');
+
+  fireEvent.change(searchInput, { target: { value: '否' } });
+
+  expect(searchInput.value).toBe('否');
+
+  await findAllByTestId('displayList');
+
+  const item = await waitForElement( () => getByRole('navigation') );
+  const nextButton = item.querySelectorAll('a')[3];
+
+  expect(nextButton).toHaveTextContent('2');
+
+  fireEvent.click(nextButton);
+});
+
 test('delete item amd retun result, pagination 2 become to 1', async () => {
   window.confirm = jest.fn(() => true);
 

@@ -281,8 +281,15 @@ class Member extends Component {
 
   // 分頁刷頁
   handlePaginationChange(e, {activePage}) {
+    let { search } = this.state;
+
     this.setState({ activePage });
-    this.search(this.state.search, activePage);
+
+    if (search){
+      this.search(search, activePage);
+    } else {
+      this.refresh(activePage);
+    }
   }
 
   // 彈跳視窗 - 新增資料
