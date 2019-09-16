@@ -55,7 +55,7 @@ class Member extends Component {
     pageNoUrl.set('first_result', firstPost);
     pageNoUrl.set('max_results', postsPerPage);
 
-    axios.get('http://192.168.56.101:9988/api/users?' + pageNoUrl).then((res) => {
+    axios.get('/api/users?' + pageNoUrl).then((res) => {
       let itemTotal = res.data.pagination.total;
       let paginationTotal = Math.ceil(itemTotal / postsPerPage);
 
@@ -72,7 +72,7 @@ class Member extends Component {
   addMember() {
     let { newMemberData } = this.state;
     if (newMemberData.username) {
-      axios.post('http://192.168.56.101:9988/api/user', newMemberData).then((res) => {
+      axios.post('/api/user', newMemberData).then((res) => {
         let { userList, total, paginationTotal } = this.state;
         const newUserList = [res.data.ret, ...userList];
 
@@ -112,7 +112,7 @@ class Member extends Component {
     let { activePage, search,  } = this.state;
 
     if (username) {
-      axios.put('http://192.168.56.101:9988/api/user/' + id, { username, enable, locked }).then(() => {
+      axios.put('/api/user/' + id, { username, enable, locked }).then(() => {
         if (search) {
           this.search(search, activePage);
         } else {
@@ -139,7 +139,7 @@ class Member extends Component {
   // 刪除資料
   deleteMember(id) {
     if (confirm('請確認是否刪除')) {
-      axios.delete('http://192.168.56.101:9988/api/user/' + id).then(() => {
+      axios.delete('/api/user/' + id).then(() => {
         let { postsPerPage, activePage, total, search, searchTotal } = this.state;
         let number;
         let allItem;
@@ -254,7 +254,7 @@ class Member extends Component {
       searchUrl.set('end_created_at', getDate + 'T' + getTime + timeEnd);
     }
 
-    axios.get('http://192.168.56.101:9988/api/users?' + searchUrl).then((res) => {
+    axios.get('/api/users?' + searchUrl).then((res) => {
       let dataPageTotal = res.data.pagination.total;
       let paginationTotal = Math.ceil(dataPageTotal / postsPerPage);
 
