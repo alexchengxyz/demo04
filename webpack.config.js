@@ -1,10 +1,22 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+let devServerHost;
+let devClientPort;
+let devServerPort;
+
+if (process.env.NODE_ENV === 'dev') {
+  devServerHost = '192.168.56.101';
+  devClientPort = 8080;
+  devServerPort = 9988;
+}
 
 module.exports = {
   devServer: {
+    host: devServerHost,
+    compress: true,
+    port: devClientPort,
     proxy: {
-      '/api': 'http://localhost:9988'
+      '/api': 'http://' + devServerHost + ':' + devServerPort
     }
   },
   entry: './src/index.js',
