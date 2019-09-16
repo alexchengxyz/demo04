@@ -1,6 +1,14 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
+
+let __devServerProxyURL
+
+if (process.NODE_ENV === 'dev') {
+  __devServerProxyURL = 'http://localhost:9988'
+}
+
+
 module.exports = {
   entry: './src/index.js',
   output: {
@@ -28,5 +36,10 @@ module.exports = {
       template: "./src/index.html",
       filename: "./index.html"
     })
-  ]
+  ],
+  devServer: {
+    proxy: {
+      '/api': __devServerProxyURL  
+    }
+  }
 }
