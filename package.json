@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --mode development --open --hot",
+    "start": "cross-env NODE_ENV=dev webpack-dev-server --mode development --open --hot",
+    "run_dev": "npm run api-server & npm run start",
     "build": "webpack --mode production",
     "api-server": "node api/index.js",
     "lint": "eslint --fix src/*.js",
@@ -49,6 +50,7 @@
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-jest-hoist": "^24.9.0",
+    "cross-env": "^5.2.1",
     "css-loader": "^3.2.0",
     "eslint": "^4.19.1",
     "eslint-plugin-jest": "^22.15.1",
