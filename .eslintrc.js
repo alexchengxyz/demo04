@@ -23,7 +23,8 @@ module.exports = {
   "plugins": [
     "react",
     "promise",
-    "jest"
+    "jest",
+    "react-hooks"
   ],
   "rules": {
     "strict": 0,
@@ -53,6 +54,8 @@ module.exports = {
     "promise/avoid-new": "warn",
     "promise/no-new-statics": "error",
     "promise/no-return-in-finally": "warn",
-    "promise/valid-params": "warn"
+    "promise/valid-params": "warn",
+    "react-hooks/rules-of-hooks": "error", // 檢查 Hook 的規則
+    "react-hooks/exhaustive-deps": "warn" // 檢查 effect 的相依性
   },
 };

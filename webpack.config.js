@@ -1,22 +1,14 @@
+require('dotenv').config();
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-let devServerHost;
-let devClientPort;
-let devServerPort;
-
-if (process.env.NODE_ENV === 'dev') {
-  devServerHost = '192.168.56.101';
-  devClientPort = 8080;
-  devServerPort = 9988;
-}
 
 module.exports = {
   devServer: {
-    host: devServerHost,
+    host: process.env.CLIENT_HOST,
     compress: true,
-    port: devClientPort,
+    port: process.env.CLIENT_PORT,
     proxy: {
-      '/api': 'http://' + devServerHost + ':' + devServerPort
+      '/api': process.env.SERVER_HOST
     }
   },
   entry: './src/index.js',

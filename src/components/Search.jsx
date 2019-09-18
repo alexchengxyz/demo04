@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Search(props){
+function Search(props) {
   // css樣式
   const marginRight = {
     marginRight: '20px'
@@ -20,4 +20,4 @@ function Search(props){
   );
 }
 
-export default Search
+export default Search;
