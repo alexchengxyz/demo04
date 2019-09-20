@@ -47,25 +47,24 @@ function Member(){
       let itemTotal = res.data.pagination.total;
       let newPaginationTotal = Math.ceil(itemTotal / postsPerPage);
 
-      //console.log(postsPerPage);
-
       setUserList(res.data.ret);
       setTotal(itemTotal);
       setSearch('');
       setPaginationTotal(newPaginationTotal);
-    });
+    })
+
   }
 
   // 新增資料
   function addMember() {
-    if (newUsername) {
+    if (newMemberData.username) {
       axios.post('/api/user', newMemberData).then((res) => {
         const newUserList = [res.data.ret, ...userList];
 
         setUserList(newUserList);
         setActivePage(1);
         setTotal(total + 1);
-        setPostsPerPage(paginationTotal);
+        setPaginationTotal(paginationTotal);
         setAddMemberModal(false);
 
         setNewMemberData({
@@ -90,13 +89,20 @@ function Member(){
 
   function updateMember() {
     if (editMemberData.username) {
-      let innerId = editMemberData.id;
-      let innerUsername = editMemberData.username;
-      let innerEnable = editMemberData.enable;
-      let innerLocked = editMemberData.locked;
+      let insertId = editMemberData.id;
 
-      axios.put('/api/user/' + innerId, { innerUsername, innerEnable, innerLocked }).then(() => {
-        refresh(activePage);
+      let insertData = {
+        username: editMemberData.username,
+        enable: editMemberData.enable,
+        locked:  editMemberData.locked
+      }
+
+      axios.put('/api/user/' + insertId, insertData).then(() => {
+        if (search) {
+          formSearch(search, activePage);
+        } else {
+          refresh(activePage);
+        }
 
         setActivePage(activePage);
         setEditMemberModal(false);
@@ -114,6 +120,152 @@ function Member(){
     }
   }
 
+  // 刪除資料
+  function deleteMember(id) {
+    if (confirm('請確認是否刪除')) {
+      axios.delete('/api/user/' + id).then(() => {
+        let number;
+        let allItem;
+
+        if (search) {
+          allItem = searchTotal;
+        } else {
+          allItem = total;
+        }
+
+        let changeNumber = Math.ceil((allItem - 1) / postsPerPage);
+
+        if (activePage > changeNumber) {
+          number = changeNumber;
+        } else {
+          number = activePage;
+        }
+
+        setActivePage(number);
+
+        if (search) {
+          formSearch(search, number);
+        } else {
+          refresh(number);
+        }
+      });
+    } else {
+      return false;
+    }
+  }
+
+  // 搜尋
+  function formSearch(searchText, number) {
+    let firstPost = (number * postsPerPage) - postsPerPage ;
+    let proSearchText = searchText.toLowerCase();
+    let getYear = proSearchText.substring(0,4);
+    let getMoth = proSearchText.substr(5,2);
+    let getDay = proSearchText.substr(8,2);
+    let getHours = proSearchText.substr(13,2);
+    let getMinute = proSearchText.substr(-2);
+    let getDate;
+    let getTime;
+    let getAllTime;
+    let searchUrl  = new URLSearchParams();
+
+    searchUrl.set('first_result', firstPost);
+    searchUrl.set('max_results', postsPerPage);
+
+    if (!isNaN(proSearchText)) {
+      searchUrl.set('id', proSearchText);
+    }
+
+    // 比對年月日
+    if(
+      !isNaN(getYear)
+      && !isNaN(getMoth)
+      && !isNaN(getDay)
+      && proSearchText.length === 10
+      || proSearchText.length === 18
+    ){
+      getDate = getYear + '-' + getMoth + '-' + getDay;
+    }
+
+    // 比對所有時間
+    if(
+      !isNaN(getYear)
+      && !isNaN(getMoth)
+      && !isNaN(getDay)
+      && !isNaN(getHours)
+      && !isNaN(getMinute)
+      && proSearchText.length === 18
+    ){
+      getTime = getHours + ':' + getMinute;
+      getAllTime = getYear + '-' + getMoth + '-' + getDay + ' / ' + getTime;
+    }
+
+    if (
+      proSearchText !== '否'
+      && proSearchText !== '是'
+      && proSearchText !== getDate
+      && proSearchText !== getAllTime
+    ) {
+      searchUrl.set('username', proSearchText);
+    }
+
+    if (proSearchText === '否') {
+      searchUrl.set('enable', 0);
+      searchUrl.set('locked', 0);
+    }
+
+    if (proSearchText === '是') {
+      searchUrl.set('enable', 1);
+      searchUrl.set('locked', 1);
+    }
+
+    // 搜尋年月日
+    if (proSearchText === getDate && proSearchText.length === 10) {
+      let timeStart = moment().format('T00:00:00+00:00');
+      let timeEnd = moment().format('T24:59:59+59:59');
+
+      searchUrl.set('start_created_at', getDate + timeStart);
+      searchUrl.set('end_created_at', getDate + timeEnd);
+    }
+
+    // 搜尋年月日時
+    if (proSearchText === getAllTime && proSearchText.length === 18) {
+      let timeStart = moment().format(':00+00:00');
+      let timeEnd = moment().format(':59+59:59');
+
+      searchUrl.set('start_created_at', getDate + 'T' + getTime + timeStart);
+      searchUrl.set('end_created_at', getDate + 'T' + getTime + timeEnd);
+    }
+
+    axios.get('/api/users?' + searchUrl).then((res) => {
+      let dataPageTotal = res.data.pagination.total;
+      let newPaginationTotal = Math.ceil(dataPageTotal / postsPerPage);
+
+      setUserList(res.data.ret);
+      setSearch(searchText);
+      setSearchTotal(dataPageTotal);
+      setPaginationTotal(newPaginationTotal);
+    });
+  }
+
+  // 分頁刷頁 <- 有問題，無法讀取當下頁碼
+  function handlePaginationChange(e) {
+
+    console.log(e.target.value);
+    setActivePage(activePage);
+
+    if (search){
+      formSearch(search, activePage);
+    } else {
+      refresh(activePage);
+    }
+  }
+
+  // 彈跳視窗 - 新增資料
+  function newToggleModal() {
+    setAddMemberModal(!addMemberModal);
+    setAddError(false);
+  }
+
   // 彈跳視窗 - 編輯資料
   function editToggleModal() {
     setEditMemberModal(!editMemberModal);
@@ -121,6 +273,8 @@ function Member(){
   }
 
   let showUserList;
+  let showPagination;
+  let noInfo;
 
   // 顯示列表
   if (total) {
@@ -158,16 +312,62 @@ function Member(){
             >
               編輯
             </Button>
-
+            <Button
+              color="red"
+              onClick={() => deleteMember(userData.id)}
+            >
+              刪除
+            </Button>
           </Table.Cell>
         </Table.Row>
       );
     });
   }
 
+  if (total < 1 || (search && searchTotal < 1)) {
+    noInfo = (
+      <Table.Row>
+        <Table.Cell colSpan="7">
+          <Message>
+            <Message.Header>找不到符合條件的內容。</Message.Header>
+          </Message>
+        </Table.Cell>
+      </Table.Row>
+    );
+  }
+
+  // 顯示頁碼
+  if (paginationTotal > 1) {
+    showPagination = (
+      <div className="ui.clearing.segment">
+        <div style={{float: 'right', marginBottom: '40px'}} className="ui pagination menu">
+          <Pagination
+            activePage={activePage}
+            onPageChange={ e => handlePaginationChange(e)}
+            totalPages={paginationTotal}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div>
         <Header as="h1" className="dividing artivle-title">會員管理</Header>
+
+        <div style={{textAlign: 'right'}}>
+          <Search
+            value={search}
+            onChange={(e) => {
+              let value = e.target.value;
+              setSearch(value);
+              setActivePage(1);
+              formSearch(value, 1);
+            }}
+          />
+          <Button color="blue" onClick={() => newToggleModal()}>新增會員</Button>
+        </div>
+
         <Table celled>
           <Table.Header>
             <Table.Row>
@@ -181,9 +381,56 @@ function Member(){
           </Table.Header>
           <Table.Body>
             {showUserList}
+            {noInfo}
           </Table.Body>
         </Table>
 
+        {showPagination}
+
+        {/* 彈跳視窗 - 新增資料 */}
+        <Modal open={addMemberModal} data-testid="addMemberModal">
+          <Modal.Header>新增會員</Modal.Header>
+          <Modal.Content>
+            <Form error={addError}>
+              <Form.Group widths='equal'>
+                <Form.Input
+                  fluid
+                  label='姓名'
+                  error={addError}
+                  value={newMemberData.username}
+                  onChange={ e => setNewMemberData({...newMemberData, username: e.target.value }) }
+                />
+              </Form.Group>
+              <Message error content="請填寫姓名" />
+              <Form.Group widths='equal'>
+                <Form.Field
+                  label="是否啟動"
+                  control="select"
+                  value={newMemberData.enable}
+                  onChange={ e => setNewMemberData({ ... newMemberData, enable: Number(e.target.value) }) }
+                  data-testid="addMemberEnable"
+                >
+                  <option value="0">否</option>
+                  <option value="1">是</option>
+                </Form.Field>
+                <Form.Field
+                  label="是否鎖定"
+                  control="select"
+                  value={newMemberData.locked}
+                  onChange={ e => setNewMemberData({ ... newMemberData, locked: Number(e.target.value) }) }
+                  data-testid="addMemberLocked"
+                >
+                  <option value="0">否</option>
+                  <option value="1">是</option>
+                </Form.Field>
+              </Form.Group>
+            </Form>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button color="green" onClick={() => addMember()}>確定</Button>
+            <Button onClick={() => newToggleModal()}>取消</Button>
+          </Modal.Actions>
+        </Modal>
 
         {/* 彈跳視窗 - 編輯資料 */}
         <Modal open={editMemberModal} data-testid="editMemberModal">

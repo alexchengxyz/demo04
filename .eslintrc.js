@@ -7,7 +7,7 @@ module.exports = {
   },
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended"
+    "plugin:react/recommended",
   ],
   "globals": {
     "Atomics": "readonly",
@@ -22,7 +22,6 @@ module.exports = {
   },
   "plugins": [
     "react",
-    "promise",
     "jest",
     "react-hooks"
   ],
@@ -35,27 +34,38 @@ module.exports = {
     "react/jsx-uses-vars": "error",
     "react/forbid-elements": "off",
     "react/prop-types": 0, //防止在React元件定義中丟失props驗證
-    "no-unused-vars": "warn",
-    "no-console": 1,
-    "no-unexpected-multiline": "warn",
+    "react-hooks/rules-of-hooks": "error", // 檢查 Hook 的規則
+    "react-hooks/exhaustive-deps": "warn", // 檢查 effect 的相依性
     "jest/no-disabled-tests": "warn",
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",
     "jest/prefer-to-have-length": "warn",
     "jest/valid-expect": "error",
-    "promise/always-return": "error",
-    "promise/no-return-wrap": "error",
-    "promise/param-names": "error",
-    "promise/catch-or-return": "error",
-    "promise/no-native": "off",
-    "promise/no-nesting": "warn",
-    "promise/no-promise-in-callback": "warn",
-    "promise/no-callback-in-promise": "warn",
-    "promise/avoid-new": "warn",
-    "promise/no-new-statics": "error",
-    "promise/no-return-in-finally": "warn",
-    "promise/valid-params": "warn",
-    "react-hooks/rules-of-hooks": "error", // 檢查 Hook 的規則
-    "react-hooks/exhaustive-deps": "warn" // 檢查 effect 的相依性
+    "no-console": 1,
+    "no-unexpected-multiline": "warn",
+    "no-confusing-arrow": ["error", {"allowParens": true}] // 避免混淆箭頭函式語法
   },
+  "settings": {
+    "react": {
+      "createClass": "createReactClass", // Regex for Component Factory to use,
+                                         // default to "createReactClass"
+      "pragma": "React",  // Pragma to use, default to "React"
+      "version": "detect", // React version. "detect" automatically picks the version you have installed.
+                           // You can also use `16.0`, `16.3`, etc, if you want to override the detected value.
+                           // default to latest and warns if missing
+                           // It will default to "detect" in the future
+      "flowVersion": "0.53" // Flow version
+    },
+    "propWrapperFunctions": [
+        // The names of any function used to wrap propTypes, e.g. `forbidExtraProps`. If this isn't set, any propTypes wrapped in a function will be skipped.
+        "forbidExtraProps",
+        {"property": "freeze", "object": "Object"},
+        {"property": "myFavoriteWrapper"}
+    ],
+    "linkComponents": [
+      // Components used as alternatives to <a> for linking, eg. <Link to={ url } />
+      "Hyperlink",
+      {"name": "Link", "linkAttribute": "to"}
+    ]
+  }
 };
