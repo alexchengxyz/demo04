@@ -33,7 +33,7 @@ function Member(){
 
   useEffect( () => {
     refresh(activePage);
-  }, []);
+  }, [activePage]);
 
   // 刷新資料
   function refresh(number) {
@@ -247,10 +247,8 @@ function Member(){
     });
   }
 
-  // 分頁刷頁 <- 有問題，無法讀取當下頁碼
-  function handlePaginationChange(e) {
-
-    console.log(e.target.value);
+  // 分頁刷頁
+  function handlePaginationChange(e, {activePage}) {
     setActivePage(activePage);
 
     if (search){
@@ -343,7 +341,7 @@ function Member(){
         <div style={{float: 'right', marginBottom: '40px'}} className="ui pagination menu">
           <Pagination
             activePage={activePage}
-            onPageChange={ e => handlePaginationChange(e)}
+            onPageChange={handlePaginationChange}
             totalPages={paginationTotal}
           />
         </div>
@@ -365,7 +363,7 @@ function Member(){
               formSearch(value, 1);
             }}
           />
-          <Button color="blue" onClick={() => newToggleModal()}>新增會員</Button>
+          <Button color="blue" onClick={newToggleModal}>新增會員</Button>
         </div>
 
         <Table celled>
@@ -427,8 +425,8 @@ function Member(){
             </Form>
           </Modal.Content>
           <Modal.Actions>
-            <Button color="green" onClick={() => addMember()}>確定</Button>
-            <Button onClick={() => newToggleModal()}>取消</Button>
+            <Button color="green" onClick={addMember}>確定</Button>
+            <Button onClick={newToggleModal}>取消</Button>
           </Modal.Actions>
         </Modal>
 
@@ -472,8 +470,8 @@ function Member(){
             </Form>
           </Modal.Content>
           <Modal.Actions>
-            <Button color="green" onClick={() => updateMember()}>更新</Button>
-            <Button onClick={() => editToggleModal()}>取消</Button>
+            <Button color="green" onClick={updateMember}>更新</Button>
+            <Button onClick={editToggleModal}>取消</Button>
           </Modal.Actions>
         </Modal>
     </div>

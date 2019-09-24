@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, cleanup, waitForElement, fireEvent } from '@testing-library/react';
+import { render, cleanup, waitForElement, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import axios from 'axios';
 import Member from '../Member';
@@ -71,21 +71,28 @@ test('add new item', async () => {
   expect(getByTestId('addMemberLocked').value).toBe('0');
 
   axios.post.mockResolvedValue(resp);
-  await fireEvent.click(getByText('確定'));
 
-  // 取回列表資料
-  const addItem = await findAllByTestId('displayList');
+  let addItem;
 
-  expect(addItem).toHaveLength(21);
+  await act( async () => {
+    await fireEvent.click(getByText('確定'));
+    // 取回列表資料
+    addItem = await findAllByTestId('displayList');
+  });
+
+  expect(addItem).toHaveLength(1);
   expect(addItem[0].textContent).toEqual('21alex是否2019-08-13 / 17:54編輯刪除')
 });
 
-test('enter null value and show error message', () => {
+test('enter null value and show error message', async () => {
   const { getByTestId, getByText } = render(<Member />);
   let addButton = getByText('新增會員');
 
-  // 打開新增會員視窗
-  fireEvent.click(addButton);
+  await act( async() => {
+    // 打開新增會員視窗
+    fireEvent.click(addButton);
+  });
+
   let addMemberModal = getByTestId('addMemberModal');
   expect(addMemberModal).toHaveTextContent('新增會員');
 
@@ -149,8 +156,10 @@ describe('edit item and finish edit result', () => {
     expect(getByTestId('editMemberLocked').value).toBe('1');
 
     axios.put.mockResolvedValue(newResp);
-    await fireEvent.click(clickUpdate);
 
+    await act( async() => {
+      await fireEvent.click(clickUpdate);
+    });
   });
 
   test('check return message', async () => {
@@ -178,56 +187,68 @@ describe('edit item and finish edit result', () => {
 describe('search result', () => {
   afterEach(cleanup);
 
-  test('enter id and check input value', () => {
+  test('enter id and check input value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: '1' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: '1' } });
+    });
 
     expect(searchInput.value).toBe('1');
   });
 
-  test('enter username and check input value', () => {
+  test('enter username and check input value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: 'user1' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: 'user1' } });
+    });
 
     expect(searchInput.value).toBe('user1');
   });
 
-  test('enter 否 and check select value', () => {
+  test('enter 否 and check select value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: '否' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: '否' } });
+    });
 
     expect(searchInput.value).toBe('否');
   });
 
-  test('enter 是 and check select value', () => {
+  test('enter 是 and check select value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: '是' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: '是' } });
+    });
 
     expect(searchInput.value).toBe('是');
   });
 
-  test('enter year,month,day and check input value', () => {
+  test('enter year,month,day and check input value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: '2019-08-13' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: '2019-08-13' } });
+    });
 
     expect(searchInput.value).toBe('2019-08-13');
   });
 
-  test('enter year,month,day,time and check input value', () => {
+  test('enter year,month,day,time and check input value', async () => {
     const { getByPlaceholderText } = render(<Member />);
     const searchInput = getByPlaceholderText('搜尋');
 
-    fireEvent.change(searchInput, { target: { value: '2019-08-13 / 17:54' } });
+    await act( async() => {
+      fireEvent.change(searchInput, { target: { value: '2019-08-13 / 17:54' } });
+    });
 
     expect(searchInput.value).toBe('2019-08-13 / 17:54');
   });
@@ -246,7 +267,9 @@ describe('search result', () => {
 
     const mockDelet = axios.delete.mockResolvedValue();
 
-    await fireEvent.click(getAllByText('刪除')[0]);
+    await act( async() => {
+      await fireEvent.click(getAllByText('刪除')[0]);
+    });
 
     expect(mockDelet).toBeCalled();
   });
@@ -265,14 +288,18 @@ describe('search result', () => {
 
     const { getByText, getAllByText } = render(<Member />);
 
-    // 打開編輯視窗
-    await fireEvent.click(getAllByText('編輯')[0]);
+    await act( async() => {
+      // 打開編輯視窗
+      await fireEvent.click(getAllByText('編輯')[0]);
+    });
 
     const clickUpdate = getByText('更新');
     const mockEdit = axios.put.mockResolvedValue();
 
-    // 點擊更新
-    await fireEvent.click(clickUpdate);
+    await act( async() => {
+      // 點擊更新
+      await fireEvent.click(clickUpdate);
+    });
 
     expect(mockEdit).toBeCalled();
   });
@@ -294,7 +321,9 @@ describe('delete item', () => {
 
     const mockDelet = axios.delete.mockResolvedValue(deleteResp);
 
-    await fireEvent.click(getAllByText('刪除')[0]);
+    await act( async() => {
+      await fireEvent.click(getAllByText('刪除')[0]);
+    });
 
     expect(mockDelet).toBeCalled();
   });
@@ -314,7 +343,9 @@ describe('delete item', () => {
 
     const mockDelet = axios.delete.mockResolvedValue(deleteResp);
 
-    await fireEvent.click(getAllByText('刪除')[0]);
+    await act( async() => {
+      await fireEvent.click(getAllByText('刪除')[0]);
+    });
 
     expect(mockDelet).not.toBeCalled();
   });
@@ -368,7 +399,9 @@ test('first render, the item total > 20 and show pagination', async () => {
 
   expect(nextButton).toHaveTextContent('2');
 
-  fireEvent.click(nextButton);
+  await act( async() => {
+    fireEvent.click(nextButton);
+  });
 });
 
 test('search item and show pagination', async () => {
@@ -386,7 +419,9 @@ test('search item and show pagination', async () => {
 
   expect(nextButton).toHaveTextContent('2');
 
-  fireEvent.click(nextButton);
+  await act( async() => {
+    fireEvent.click(nextButton);
+  });
 });
 
 test('delete item amd retun result, pagination 2 become to 1', async () => {
@@ -400,5 +435,8 @@ test('delete item amd retun result, pagination 2 become to 1', async () => {
   axios.delete.mockResolvedValue();
 
   await findAllByTestId('displayList');
-  await fireEvent.click(getAllByText('刪除')[0]);
+
+  await act( async() => {
+    await fireEvent.click(getAllByText('刪除')[0]);
+  });
 });
