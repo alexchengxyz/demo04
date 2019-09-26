@@ -1,5 +1,5 @@
 {
-  "name": "alex-test",
+  "name": "alex-test-client",
   "version": "1.0.0",
   "description": "CURD case",
   "repository": {
@@ -10,7 +10,6 @@
   "scripts": {
     "start": "webpack-dev-server",
     "build": "webpack --mode production",
-    "api-server": "node api/index.js",
     "lint": "eslint --fix src/*.js",
     "test-w": "jest --watchAll",
     "test-c": "jest --coverage"
@@ -30,13 +29,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@koa/cors": "^3.0.0",
     "acorn": "^7.0.0",
     "axios": "^0.19.0",
     "dotenv": "^8.1.0",
-    "koa": "^2.7.0",
-    "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0",
     "moment": "^2.24.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",

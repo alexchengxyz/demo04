@@ -113,7 +113,6 @@ app.on('error', (err, ctx) => {
 });
 
 app
-  .use(cors())
   .use(bodyParser())
   .use(router.routes())
   .use(router.allowedMethods())
