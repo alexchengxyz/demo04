@@ -1,10 +1,15 @@
-FROM node:10.16.3
+FROM node:10.15.3-alpine
 
-RUN mkdir -p /home/alex_chen
+# create alex_chen directory and use it ad the workgin directory
+RUN mkdir -p /home/alex_chen/server
+WORKDIR /home/alex_chen/server
 
-WORKDIR /home/alex_chen
+COPY package.json /home/alex_chen/server
+COPY package-lock.json /home/alex_chen/server
 
-EXPOSE 9898
+RUN npm install
 
-# You can change this
+COPY . /home/alex_chen/server
+
+# 執行
 CMD [ "npm", "run", "api-server" ]
