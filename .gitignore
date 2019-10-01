@@ -1,7 +1,0 @@
-﻿#排除以下檔案或資料夾
-
-/.vscode
-**/node_modules
-**/package-lock.json
-**/yarn.lock
-**/coverage
