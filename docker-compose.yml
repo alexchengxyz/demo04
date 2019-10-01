@@ -1,0 +1,23 @@
+version: "3"
+services:
+  # Server
+  server:
+    build: ./server
+    expose:
+      - 9988
+    ports:
+      - 9988:9988
+    volumes:
+      - ./server:/home/alex_chen/server
+
+  # Client
+  client:
+    build: ./client
+    expose:
+      - 80
+    ports:
+      - 80:80
+    volumes:
+      - ./client/public:/usr/share/nginx/html
+    links:
+      - server
